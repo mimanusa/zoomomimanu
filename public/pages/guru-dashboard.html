@@ -436,7 +436,7 @@
     function masukRuangVideo() {
       if (!ruangDipilih) return;
       localStorage.setItem('ruangSaatIni', JSON.stringify(ruangDipilih));
-      window.open(`/ruang/${ruangDipilih.id}`, '_blank');
+      window.location.href = `/ruang/${ruangDipilih.id}`;
     }
 
     function salinKode() {
