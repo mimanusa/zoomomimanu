@@ -176,8 +176,21 @@
     .toolbar-papan label { font-size: 12px; color: #666; align-self: center; }
     #papan-canvas { cursor: crosshair; touch-action: none; background: white; }
     #papan-canvas.mode-teks { cursor: text; }
-    #papan-canvas.mode-zoom { cursor: zoom-in; }
+    #papan-canvas.mode-hapus { cursor: cell; }
+    #papan-canvas.mode-pan { cursor: grab; }
+    #papan-canvas.mode-pan:active { cursor: grabbing; }
+    #papan-zoom-wrapper.mode-pan { cursor: grab; }
+    #papan-zoom-wrapper.mode-pan:active { cursor: grabbing; }
     .siswa-papan-info { padding: 10px 16px; background: #dbeafe; font-size: 13px; color: #1e40af; display: none; }
+    /* Teks preview real-time di atas canvas */
+    #preview-teks-papan {
+      position: absolute;
+      pointer-events: none;
+      z-index: 19;
+      font-bold: bold;
+      white-space: pre;
+      display: none;
+    }
 
     /* ---- PANEL TUGAS ---- */
     #panel-tugas { flex-direction: column; background: white; overflow-y: auto; padding: 20px; }
@@ -463,6 +476,18 @@
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
           Teks
         </button>
+        <button class="btn btn-kecil btn-abu" onclick="gantiAlat('pan')" id="btn-alat-pan" title="Geser / Pan (saat zoom)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 00-4 0v5"/><path d="M14 10V4a2 2 0 00-4 0v2"/><path d="M10 10.5V6a2 2 0 00-4 0v8"/><path d="M18 8a2 2 0 114 0v6a8 8 0 01-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 012.83-2.82L8 15"/></svg>
+          Geser
+        </button>
+        <button class="btn btn-kecil btn-abu" id="btn-undo" onclick="undoPapan()" title="Undo (Ctrl+Z)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 00-4-4H4"/></svg>
+          Undo
+        </button>
+        <button class="btn btn-kecil btn-abu" id="btn-redo" onclick="redoPapan()" title="Redo (Ctrl+Y)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 014-4h12"/></svg>
+          Redo
+        </button>
         <button class="btn btn-kecil btn-merah" onclick="bersihkanPapan()">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
           Bersihkan
@@ -501,6 +526,8 @@
           <input type="text" id="input-teks-papan" placeholder="Ketik teks, Enter untuk tempel..."
             style="display:none;position:absolute;z-index:20;border:2px dashed #3b82f6;background:rgba(255,255,255,0.92);
             padding:4px 8px;font-size:16px;border-radius:4px;min-width:140px;outline:none;box-shadow:0 2px 8px rgba(0,0,0,0.15);" />
+          <!-- Preview teks real-time (siswa ikut lihat via broadcast) -->
+          <div id="preview-teks-papan"></div>
         </div>
       </div>
     </div>
@@ -731,6 +758,15 @@ function hubungkanSocket() {
 
   socket.on('papan-tulis-teks', (data) => {
     teksFromRemote(data);
+    // Hapus preview setelah teks ditempel
+    previewTeksFromRemote(null);
+  });
+
+  socket.on('papan-tulis-preview-teks', (data) => {
+    // Hanya siswa yang menampilkan preview (guru sudah lihat di input)
+    if (penggunaSaatIni.role !== 'guru') {
+      previewTeksFromRemote(data);
+    }
   });
 
   // ---- Presentasi dari Guru ----
@@ -965,15 +1001,39 @@ function angkatTangan() {
 // ZOOM PAPAN TULIS
 // =====================================================
 let zoomLevel = 1.0;
+// Untuk pan (geser saat zoom)
+let panX = 0, panY = 0;
 
-function zoomPapan(delta) {
+function zoomPapan(delta, cx, cy) {
+  const wrapper = document.getElementById('papan-zoom-wrapper');
+  const inner = document.getElementById('papan-zoom-inner');
+  if (!wrapper || !inner) return;
+
+  // Titik pusat zoom (default: tengah wrapper)
+  if (cx === undefined) cx = wrapper.clientWidth / 2;
+  if (cy === undefined) cy = wrapper.clientHeight / 2;
+
+  // Hitung posisi relatif terhadap inner sebelum zoom
+  const scaledX = (cx + wrapper.scrollLeft - panX) / zoomLevel;
+  const scaledY = (cy + wrapper.scrollTop - panY) / zoomLevel;
+
+  const sebelum = zoomLevel;
   zoomLevel = Math.min(4, Math.max(0.3, zoomLevel + delta));
+  if (zoomLevel === sebelum) return;
+
   terapkanZoom();
+
+  // Sesuaikan scroll agar titik pusat tetap di posisi sama
+  wrapper.scrollLeft = scaledX * zoomLevel + panX - cx;
+  wrapper.scrollTop  = scaledY * zoomLevel + panY - cy;
 }
 
 function resetZoomPapan() {
   zoomLevel = 1.0;
+  panX = 0; panY = 0;
   terapkanZoom();
+  const wrapper = document.getElementById('papan-zoom-wrapper');
+  if (wrapper) { wrapper.scrollLeft = 0; wrapper.scrollTop = 0; }
 }
 
 function terapkanZoom() {
@@ -989,6 +1049,47 @@ function terapkanZoom() {
 }
 
 // =====================================================
+// UNDO / REDO
+// =====================================================
+let undoStack = [];
+let redoStack = [];
+
+function simpanStateUndoPapan() {
+  const canvas = document.getElementById('papan-canvas');
+  undoStack.push(canvas.toDataURL());
+  if (undoStack.length > 40) undoStack.shift(); // Batas maksimum 40 state
+  redoStack = []; // Reset redo setiap aksi baru
+}
+
+function undoPapan() {
+  if (undoStack.length === 0) return;
+  const canvas = document.getElementById('papan-canvas');
+  const ctx = canvas.getContext('2d');
+  redoStack.push(canvas.toDataURL());
+  const prev = undoStack.pop();
+  const img = new Image();
+  img.onload = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+  };
+  img.src = prev;
+}
+
+function redoPapan() {
+  if (redoStack.length === 0) return;
+  const canvas = document.getElementById('papan-canvas');
+  const ctx = canvas.getContext('2d');
+  undoStack.push(canvas.toDataURL());
+  const next = redoStack.pop();
+  const img = new Image();
+  img.onload = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+  };
+  img.src = next;
+}
+
+// =====================================================
 // PAPAN TULIS
 // =====================================================
 function setupPapanTulis() {
@@ -996,6 +1097,12 @@ function setupPapanTulis() {
   const ctx = canvas.getContext('2d');
   let sedangGambar = false;
   let posSebelumnya = null;
+  // Pan state
+  let sedangPan = false;
+  let panStart = { x: 0, y: 0 };
+  let scrollStart = { x: 0, y: 0 };
+  // Pinch zoom
+  let pinchJarak = null;
 
   // Ukuran canvas berdasarkan wrapper
   function updateUkuranCanvas() {
@@ -1010,40 +1117,124 @@ function setupPapanTulis() {
   updateUkuranCanvas();
   window.addEventListener('resize', updateUkuranCanvas);
 
+  // Simpan state awal untuk undo
+  setTimeout(() => simpanStateUndoPapan(), 200);
+
+  // --- Pinch zoom untuk wrapper (semua pengguna) ---
+  const wrapper = document.getElementById('papan-zoom-wrapper');
+
+  wrapper.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      pinchJarak = jarakDuaJari(e.touches);
+    }
+  }, { passive: true });
+
+  wrapper.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const jarakBaru = jarakDuaJari(e.touches);
+      if (pinchJarak !== null) {
+        const delta = (jarakBaru - pinchJarak) * 0.008;
+        // Titik tengah antara dua jari
+        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - wrapper.getBoundingClientRect().left;
+        const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - wrapper.getBoundingClientRect().top;
+        zoomPapan(delta, midX, midY);
+      }
+      pinchJarak = jarakBaru;
+    }
+  }, { passive: false });
+
+  wrapper.addEventListener('touchend', (e) => {
+    if (e.touches.length < 2) pinchJarak = null;
+  }, { passive: true });
+
+  // Ctrl+scroll zoom
+  wrapper.addEventListener('wheel', (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const rect = wrapper.getBoundingClientRect();
+      zoomPapan(e.deltaY < 0 ? 0.1 : -0.1, e.clientX - rect.left, e.clientY - rect.top);
+    }
+  }, { passive: false });
+
   // Hanya guru yang bisa menggambar/menulis
   if (penggunaSaatIni.role !== 'guru') return;
 
+  // Keyboard shortcut undo/redo
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'z') { e.preventDefault(); undoPapan(); }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) { e.preventDefault(); redoPapan(); }
+  });
+
   // --- Input teks ---
   const inputTeks = document.getElementById('input-teks-papan');
+  const previewTeks = document.getElementById('preview-teks-papan');
   let teksPosX = 0, teksPosY = 0;
 
   function tampilInputTeks(x, y) {
-    // Posisi dalam canvas (koordinat logical)
     teksPosX = x; teksPosY = y;
-    // Posisi di dalam inner div (scaling sudah di transform, pakai koordinat canvas)
+    const warna = document.getElementById('warna-papan').value;
+    const ukuran = parseInt(document.getElementById('ukuran-kuas').value);
+    const ukuranFont = Math.max(14, ukuran * 3);
+
     inputTeks.style.left = x + 'px';
-    inputTeks.style.top = (y - 24) + 'px';
-    inputTeks.style.fontSize = (16 / zoomLevel * 1) + 'px';
+    inputTeks.style.top = (y - ukuranFont - 4) + 'px';
+    inputTeks.style.fontSize = ukuranFont + 'px';
+    inputTeks.style.color = warna;
+    inputTeks.style.fontWeight = 'bold';
+    inputTeks.style.fontFamily = 'sans-serif';
     inputTeks.style.display = 'block';
     inputTeks.value = '';
+
+    // Setup preview
+    previewTeks.style.left = x + 'px';
+    previewTeks.style.top = (y - ukuranFont - 4) + 'px';
+    previewTeks.style.fontSize = ukuranFont + 'px';
+    previewTeks.style.fontWeight = 'bold';
+    previewTeks.style.fontFamily = 'sans-serif';
+    previewTeks.style.color = warna;
+    previewTeks.style.display = 'block';
+    previewTeks.textContent = '';
+
     inputTeks.focus();
   }
 
   function sembunyikanInputTeks() {
     inputTeks.style.display = 'none';
     inputTeks.value = '';
+    if (previewTeks) { previewTeks.style.display = 'none'; previewTeks.textContent = ''; }
+    // Broadcast hide preview
+    socket.emit('papan-tulis-preview-teks', {
+      ruangId: ruangSaatIni.id,
+      data: null // null = hapus preview
+    });
   }
+
+  // Update preview saat guru mengetik
+  inputTeks.addEventListener('input', () => {
+    const teks = inputTeks.value;
+    const warna = document.getElementById('warna-papan').value;
+    const ukuran = parseInt(document.getElementById('ukuran-kuas').value);
+    const ukuranFont = Math.max(14, ukuran * 3);
+    // Update preview lokal
+    previewTeks.textContent = teks || '';
+    // Broadcast preview ke siswa
+    socket.emit('papan-tulis-preview-teks', {
+      ruangId: ruangSaatIni.id,
+      data: teks ? { x: teksPosX, y: teksPosY, teks, warna, ukuranFont } : null
+    });
+  });
 
   inputTeks.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       const teks = inputTeks.value.trim();
       if (teks) {
+        simpanStateUndoPapan();
         const warna = document.getElementById('warna-papan').value;
         const ukuran = parseInt(document.getElementById('ukuran-kuas').value);
         const ukuranFont = Math.max(14, ukuran * 3);
         tuliskanTeksKeCanvas(ctx, teksPosX, teksPosY, teks, warna, ukuranFont);
-        // Broadcast
         socket.emit('papan-tulis-teks', {
           ruangId: ruangSaatIni.id,
           data: { x: teksPosX, y: teksPosY, teks, warna, ukuranFont }
@@ -1056,9 +1247,9 @@ function setupPapanTulis() {
   });
 
   inputTeks.addEventListener('blur', () => {
-    // Tempel teks jika ada isi ketika klik di luar
     const teks = inputTeks.value.trim();
     if (teks) {
+      simpanStateUndoPapan();
       const warna = document.getElementById('warna-papan').value;
       const ukuran = parseInt(document.getElementById('ukuran-kuas').value);
       const ukuranFont = Math.max(14, ukuran * 3);
@@ -1071,7 +1262,7 @@ function setupPapanTulis() {
     sembunyikanInputTeks();
   });
 
-  // --- Posisi kursor di canvas (memperhitungkan zoom) ---
+  // --- Posisi kursor di canvas ---
   function getPosisi(e) {
     const rect = canvas.getBoundingClientRect();
     const touch = e.touches ? e.touches[0] : e;
@@ -1092,18 +1283,32 @@ function setupPapanTulis() {
     ctx.stroke();
   }
 
+  // --- MOUSE EVENTS ---
   canvas.addEventListener('mousedown', (e) => {
     if (alatPapan === 'teks') {
       const pos = getPosisi(e);
       tampilInputTeks(pos.x, pos.y);
       return;
     }
+    if (alatPapan === 'pan') {
+      sedangPan = true;
+      panStart = { x: e.clientX, y: e.clientY };
+      scrollStart = { x: wrapper.scrollLeft, y: wrapper.scrollTop };
+      return;
+    }
+    simpanStateUndoPapan();
     sedangGambar = true;
     posSebelumnya = getPosisi(e);
   });
 
   canvas.addEventListener('mousemove', (e) => {
     if (alatPapan === 'teks') return;
+    if (alatPapan === 'pan') {
+      if (!sedangPan) return;
+      wrapper.scrollLeft = scrollStart.x - (e.clientX - panStart.x);
+      wrapper.scrollTop  = scrollStart.y - (e.clientY - panStart.y);
+      return;
+    }
     if (!sedangGambar) return;
     const posSekarang = getPosisi(e);
     const warna = document.getElementById('warna-papan').value;
@@ -1118,24 +1323,40 @@ function setupPapanTulis() {
     posSebelumnya = posSekarang;
   });
 
-  canvas.addEventListener('mouseup', () => sedangGambar = false);
-  canvas.addEventListener('mouseleave', () => sedangGambar = false);
+  canvas.addEventListener('mouseup', () => { sedangGambar = false; sedangPan = false; });
+  canvas.addEventListener('mouseleave', () => { sedangGambar = false; sedangPan = false; });
 
-  // Touch support
+  // --- TOUCH EVENTS ---
   canvas.addEventListener('touchstart', (e) => {
+    // Pinch: sudah ditangani di wrapper
+    if (e.touches.length >= 2) { sedangGambar = false; return; }
     e.preventDefault();
     if (alatPapan === 'teks') {
       const pos = getPosisi(e);
       tampilInputTeks(pos.x, pos.y);
       return;
     }
+    if (alatPapan === 'pan') {
+      sedangPan = true;
+      panStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      scrollStart = { x: wrapper.scrollLeft, y: wrapper.scrollTop };
+      return;
+    }
+    simpanStateUndoPapan();
     sedangGambar = true;
     posSebelumnya = getPosisi(e);
-  });
+  }, { passive: false });
 
   canvas.addEventListener('touchmove', (e) => {
+    if (e.touches.length >= 2) return; // pinch ditangani wrapper
     e.preventDefault();
     if (alatPapan === 'teks') return;
+    if (alatPapan === 'pan') {
+      if (!sedangPan) return;
+      wrapper.scrollLeft = scrollStart.x - (e.touches[0].clientX - panStart.x);
+      wrapper.scrollTop  = scrollStart.y - (e.touches[0].clientY - panStart.y);
+      return;
+    }
     if (!sedangGambar) return;
     const posSekarang = getPosisi(e);
     const warna = document.getElementById('warna-papan').value;
@@ -1148,29 +1369,42 @@ function setupPapanTulis() {
       data: { dari: posSebelumnya, ke: posSekarang, warna, ukuran, hapus }
     });
     posSebelumnya = posSekarang;
-  });
-
-  canvas.addEventListener('touchend', () => sedangGambar = false);
-
-  // Scroll-to-zoom dengan Ctrl + scroll
-  document.getElementById('papan-zoom-wrapper').addEventListener('wheel', (e) => {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      zoomPapan(e.deltaY < 0 ? 0.1 : -0.1);
-    }
   }, { passive: false });
+
+  canvas.addEventListener('touchend', () => { sedangGambar = false; sedangPan = false; });
 }
 
-// Ctrl+scroll untuk siswa (di luar setupPapanTulis)
+// Helper: jarak dua jari
+function jarakDuaJari(touches) {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+// Ctrl+scroll untuk siswa (wrapper disetup di setupPapanTulis juga, ini fallback)
 document.addEventListener('DOMContentLoaded', () => {
   const wrapper = document.getElementById('papan-zoom-wrapper');
   if (wrapper) {
-    wrapper.addEventListener('wheel', (e) => {
-      if (e.ctrlKey || e.metaKey) {
+    // Pinch zoom untuk siswa
+    let pinchSiswa = null;
+    wrapper.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) pinchSiswa = jarakDuaJari(e.touches);
+    }, { passive: true });
+    wrapper.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2 && pinchSiswa !== null) {
         e.preventDefault();
-        zoomPapan(e.deltaY < 0 ? 0.1 : -0.1);
+        const jarakBaru = jarakDuaJari(e.touches);
+        const delta = (jarakBaru - pinchSiswa) * 0.008;
+        const rect = wrapper.getBoundingClientRect();
+        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+        const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+        zoomPapan(delta, midX, midY);
+        pinchSiswa = jarakBaru;
       }
     }, { passive: false });
+    wrapper.addEventListener('touchend', (e) => {
+      if (e.touches.length < 2) pinchSiswa = null;
+    }, { passive: true });
   }
 });
 
@@ -1199,19 +1433,44 @@ function teksFromRemote(data) {
   tuliskanTeksKeCanvas(ctx, data.x, data.y, data.teks, data.warna, data.ukuranFont);
 }
 
+// Preview teks real-time dari guru (diterima siswa)
+function previewTeksFromRemote(data) {
+  const previewEl = document.getElementById('preview-teks-papan');
+  if (!previewEl) return;
+  if (!data) {
+    previewEl.style.display = 'none';
+    previewEl.textContent = '';
+    return;
+  }
+  previewEl.style.left = data.x + 'px';
+  previewEl.style.top = (data.y - data.ukuranFont - 4) + 'px';
+  previewEl.style.fontSize = data.ukuranFont + 'px';
+  previewEl.style.fontWeight = 'bold';
+  previewEl.style.fontFamily = 'sans-serif';
+  previewEl.style.color = data.warna;
+  previewEl.style.display = 'block';
+  previewEl.textContent = data.teks;
+}
+
 function gantiAlat(alat) {
   alatPapan = alat;
   const canvas = document.getElementById('papan-canvas');
-  canvas.className = alat === 'teks' ? 'mode-teks' : (alat === 'hapus' ? '' : '');
+  const wrapper = document.getElementById('papan-zoom-wrapper');
+  // Update cursor
+  canvas.className = alat === 'teks' ? 'mode-teks' : alat === 'pan' ? 'mode-pan' : alat === 'hapus' ? 'mode-hapus' : '';
+  if (wrapper) wrapper.className = alat === 'pan' ? 'mode-pan' : '';
   // Sembunyikan input teks jika ganti alat lain
   if (alat !== 'teks') {
     const inp = document.getElementById('input-teks-papan');
     if (inp) inp.style.display = 'none';
+    const prev = document.getElementById('preview-teks-papan');
+    if (prev) { prev.style.display = 'none'; prev.textContent = ''; }
   }
 }
 
 function bersihkanPapan() {
   if (!confirm('Yakin ingin membersihkan papan tulis?')) return;
+  simpanStateUndoPapan();
   const canvas = document.getElementById('papan-canvas');
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
