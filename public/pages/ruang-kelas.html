@@ -182,15 +182,6 @@
     #papan-zoom-wrapper.mode-pan { cursor: grab; }
     #papan-zoom-wrapper.mode-pan:active { cursor: grabbing; }
     .siswa-papan-info { padding: 10px 16px; background: #dbeafe; font-size: 13px; color: #1e40af; display: none; }
-    /* Teks preview real-time di atas canvas */
-    #preview-teks-papan {
-      position: absolute;
-      pointer-events: none;
-      z-index: 19;
-      font-bold: bold;
-      white-space: pre;
-      display: none;
-    }
 
     /* ---- PANEL TUGAS ---- */
     #panel-tugas { flex-direction: column; background: white; overflow-y: auto; padding: 20px; }
@@ -221,28 +212,84 @@
       min-height: 80px;
     }
 
-    /* ---- SIDEBAR CHAT ---- */
+    /* ---- FLOATING CHAT BUTTON ---- */
+    #btn-toggle-chat {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 200;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: #3b82f6;
+      border: none;
+      color: white;
+      font-size: 22px;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, transform 0.15s;
+    }
+    #btn-toggle-chat:hover { background: #2563eb; transform: scale(1.07); }
+    #badge-chat-unread {
+      position: absolute;
+      top: -4px; right: -4px;
+      background: #ef4444;
+      color: white;
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 700;
+      width: 18px; height: 18px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ---- FLOATING CHAT PANEL ---- */
     .sidebar-chat {
-      width: 280px;
+      position: fixed;
+      bottom: 88px;
+      right: 24px;
+      width: 300px;
+      height: 420px;
       background: #1e293b;
       display: flex;
       flex-direction: column;
-      border-left: 1px solid #334155;
-      flex-shrink: 0;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+      border: 1px solid #334155;
+      z-index: 199;
+      transition: opacity 0.2s, transform 0.2s;
+      overflow: hidden;
+    }
+    .sidebar-chat.tersembunyi {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(12px) scale(0.97);
     }
     .sidebar-chat h4 { 
       padding: 12px 16px;
       color: white;
       font-size: 13px;
       border-bottom: 1px solid #334155;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .sidebar-chat h4 button {
+      background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 18px; padding: 0 2px; line-height: 1;
     }
 
     /* Daftar peserta */
     .daftar-peserta-chat {
-      padding: 10px 16px;
+      padding: 8px 14px;
       border-bottom: 1px solid #334155;
-      max-height: 120px;
+      max-height: 90px;
       overflow-y: auto;
+      flex-shrink: 0;
     }
     .item-peserta {
       display: flex;
@@ -250,7 +297,7 @@
       gap: 6px;
       color: #94a3b8;
       font-size: 12px;
-      padding: 3px 0;
+      padding: 2px 0;
     }
     .item-peserta .dot { width: 6px; height: 6px; background: #22c55e; border-radius: 50%; flex-shrink: 0; }
     .item-peserta .guru-tag { color: #60a5fa; font-weight: 700; }
@@ -259,15 +306,16 @@
     .area-pesan-chat {
       flex: 1;
       overflow-y: auto;
-      padding: 12px;
+      padding: 10px 12px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 7px;
+      min-height: 0;
     }
     .buble-chat {
       background: #334155;
       border-radius: 8px;
-      padding: 8px 10px;
+      padding: 7px 10px;
       font-size: 12px;
     }
     .buble-chat .pengirim { font-weight: 700; margin-bottom: 2px; }
@@ -278,17 +326,18 @@
 
     /* Input chat */
     .input-chat-area {
-      padding: 10px;
+      padding: 8px 10px;
       border-top: 1px solid #334155;
       display: flex;
       gap: 6px;
+      flex-shrink: 0;
     }
     .input-chat-area input {
       flex: 1;
       background: #334155;
       border: none;
       border-radius: 8px;
-      padding: 8px 12px;
+      padding: 7px 11px;
       color: white;
       font-size: 13px;
     }
@@ -298,11 +347,32 @@
       background: #3b82f6;
       border: none;
       border-radius: 8px;
-      padding: 8px 12px;
+      padding: 7px 12px;
       color: white;
       cursor: pointer;
       font-size: 16px;
     }
+
+    /* ---- DIALOG CUSTOM (ganti confirm bawaan) ---- */
+    .dialog-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    .dialog-box {
+      background: #1e293b; border-radius: 14px; padding: 24px 28px;
+      color: white; max-width: 320px; width: 90%;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      border: 1px solid #334155;
+    }
+    .dialog-box p { margin: 0 0 20px; font-size: 15px; line-height: 1.5; }
+    .dialog-box .dialog-btns { display: flex; gap: 10px; justify-content: flex-end; }
+    .dialog-box .dialog-btns button { 
+      padding: 8px 18px; border-radius: 8px; border: none;
+      cursor: pointer; font-size: 13px; font-weight: 600;
+    }
+    .dialog-box .dialog-btns .btn-batal { background: #334155; color: #94a3b8; }
+    .dialog-box .dialog-btns .btn-ok { background: #ef4444; color: white; }
 
     /* Notifikasi angkat tangan */
     .notif-tangan {
@@ -323,67 +393,14 @@
 
     /* ---- MOBILE LAYOUT ---- */
     @media (max-width: 640px) {
-      .area-utama {
-        flex-direction: column;
-      }
-
-      /* Video area ambil ruang secukupnya, tidak terlalu besar */
-      .area-video {
-        flex: none;
-        height: 55vh;
-      }
-
-      /* Grid video di HP lebih kecil */
-      .grid-video {
-        padding: 6px;
-        gap: 6px;
-      }
-
-      /* Kontrol video lebih ramping di HP */
-      .kontrol-video {
-        padding: 8px 12px;
-        gap: 8px;
-      }
-      .btn-kontrol {
-        width: 40px;
-        height: 40px;
-        font-size: 15px;
-      }
-
-      /* Sidebar chat: sisanya di bawah, tidak full screen */
-      .sidebar-chat {
-        width: 100%;
-        flex: 1;
-        border-left: none;
-        border-top: 1px solid #334155;
-        min-height: 0;
-        display: flex;
-        flex-direction: column;
-      }
-
-      /* Daftar peserta lebih ramping */
-      .daftar-peserta-chat {
-        max-height: 60px;
-        padding: 6px 12px;
-      }
-
-      /* Area pesan chat mengisi sisa ruang */
-      .area-pesan-chat {
-        flex: 1;
-        min-height: 0;
-      }
-
-      /* Input chat tetap kelihatan */
-      .input-chat-area {
-        padding: 8px;
-        flex-shrink: 0;
-      }
-
-      /* Tab nav lebih kecil di HP */
-      .tab-nav button {
-        padding: 8px 12px;
-        font-size: 12px;
-      }
+      .area-utama { flex-direction: column; }
+      .area-video { flex: 1; }
+      .grid-video { padding: 6px; gap: 6px; }
+      .kontrol-video { padding: 8px 12px; gap: 8px; }
+      .btn-kontrol { width: 40px; height: 40px; font-size: 15px; }
+      .sidebar-chat { width: calc(100vw - 32px); right: 16px; }
+      #btn-toggle-chat { bottom: 16px; right: 16px; }
+      .tab-nav button { padding: 8px 12px; font-size: 12px; }
     }
   </style>
 </head>
@@ -526,8 +543,8 @@
           <input type="text" id="input-teks-papan" placeholder="Ketik teks, Enter untuk tempel..."
             style="display:none;position:absolute;z-index:20;border:2px dashed #3b82f6;background:rgba(255,255,255,0.92);
             padding:4px 8px;font-size:16px;border-radius:4px;min-width:140px;outline:none;box-shadow:0 2px 8px rgba(0,0,0,0.15);" />
-          <!-- Preview teks real-time (siswa ikut lihat via broadcast) -->
-          <div id="preview-teks-papan"></div>
+          <!-- Preview teks real-time via canvas overlay -->
+          <canvas id="papan-preview-canvas" style="position:absolute;top:0;left:0;pointer-events:none;z-index:15;"></canvas>
         </div>
       </div>
     </div>
@@ -540,25 +557,22 @@
     </div>
   </div>
 
-  <!-- Sidebar Chat -->
-  <div class="sidebar-chat">
+  <!-- Floating Chat Panel -->
+  <div class="sidebar-chat tersembunyi" id="sidebar-chat">
     <h4>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-      Chat &amp; Peserta
+      <span style="display:flex;align-items:center;gap:8px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        Chat &amp; Peserta
+      </span>
+      <button onclick="toggleChat()" title="Tutup chat">×</button>
     </h4>
-    
-    <!-- Peserta -->
     <div class="daftar-peserta-chat" id="daftar-peserta">
       <div class="item-peserta">
         <div class="dot"></div>
         <span id="nama-sendiri-list">Memuat...</span>
       </div>
     </div>
-
-    <!-- Pesan -->
     <div class="area-pesan-chat" id="area-chat"></div>
-
-    <!-- Input -->
     <div class="input-chat-area">
       <input type="text" id="input-chat" placeholder="Tulis pesan..." 
         onkeydown="if(event.key==='Enter') kirimChat()" />
@@ -568,6 +582,12 @@
     </div>
   </div>
 </div>
+
+<!-- Tombol toggle chat (floating) -->
+<button id="btn-toggle-chat" onclick="toggleChat()" title="Chat">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+  <span id="badge-chat-unread" style="position:absolute;top:-4px;right:-4px;background:#ef4444;color:white;border-radius:50%;font-size:10px;font-weight:700;width:18px;height:18px;display:none;align-items:center;justify-content:center;"></span>
+</button>
 
 <!-- Notifikasi angkat tangan -->
 <div class="notif-tangan" id="notif-tangan"></div>
@@ -758,12 +778,13 @@ function hubungkanSocket() {
 
   socket.on('papan-tulis-teks', (data) => {
     teksFromRemote(data);
-    // Hapus preview setelah teks ditempel
-    previewTeksFromRemote(null);
+    // Hapus preview canvas setelah teks ditempel permanen
+    const pCanvas = document.getElementById('papan-preview-canvas');
+    if (pCanvas) pCanvas.getContext('2d').clearRect(0, 0, pCanvas.width, pCanvas.height);
   });
 
   socket.on('papan-tulis-preview-teks', (data) => {
-    // Hanya siswa yang menampilkan preview (guru sudah lihat di input)
+    // Siswa (dan guru lain jika ada) melihat preview real-time
     if (penggunaSaatIni.role !== 'guru') {
       previewTeksFromRemote(data);
     }
@@ -979,10 +1000,19 @@ function tambahPesanChat(nama, pesan, role, waktu = '') {
       <div class="isi">${pesan}</div>
       ${waktu ? `<div class="wkt">${waktu}</div>` : ''}
     `;
+    // Tampilkan badge unread jika chat tertutup
+    if (!chatTerbuka && nama !== (penggunaSaatIni?.namaGuru || penggunaSaatIni?.nama)) {
+      unreadChat++;
+      const badge = document.getElementById('badge-chat-unread');
+      if (badge) {
+        badge.textContent = unreadChat > 9 ? '9+' : unreadChat;
+        badge.style.display = 'flex';
+      }
+    }
   }
   
   area.appendChild(div);
-  area.scrollTop = area.scrollHeight;
+  if (chatTerbuka) area.scrollTop = area.scrollHeight;
 }
 
 // =====================================================
@@ -1108,10 +1138,12 @@ function setupPapanTulis() {
   function updateUkuranCanvas() {
     const wrapper = document.getElementById('papan-zoom-wrapper');
     if (!wrapper || wrapper.clientWidth === 0) return;
-    // Simpan konten lama
     const imgData = ctx.getImageData(0, 0, canvas.width || 1, canvas.height || 1);
     canvas.width = Math.max(wrapper.clientWidth, 1280);
     canvas.height = Math.max(wrapper.clientHeight, 720);
+    // Sync preview canvas
+    const pCanvas = document.getElementById('papan-preview-canvas');
+    if (pCanvas) { pCanvas.width = canvas.width; pCanvas.height = canvas.height; }
     try { ctx.putImageData(imgData, 0, 0); } catch(e) {}
   }
   updateUkuranCanvas();
@@ -1168,8 +1200,12 @@ function setupPapanTulis() {
 
   // --- Input teks ---
   const inputTeks = document.getElementById('input-teks-papan');
-  const previewTeks = document.getElementById('preview-teks-papan');
   let teksPosX = 0, teksPosY = 0;
+
+  function hapusPreviewCanvas() {
+    const pCanvas = document.getElementById('papan-preview-canvas');
+    if (pCanvas) pCanvas.getContext('2d').clearRect(0, 0, pCanvas.width, pCanvas.height);
+  }
 
   function tampilInputTeks(x, y) {
     teksPosX = x; teksPosY = y;
@@ -1178,50 +1214,45 @@ function setupPapanTulis() {
     const ukuranFont = Math.max(14, ukuran * 3);
 
     inputTeks.style.left = x + 'px';
-    inputTeks.style.top = (y - ukuranFont - 4) + 'px';
+    inputTeks.style.top = (y - ukuranFont - 6) + 'px';
     inputTeks.style.fontSize = ukuranFont + 'px';
     inputTeks.style.color = warna;
     inputTeks.style.fontWeight = 'bold';
     inputTeks.style.fontFamily = 'sans-serif';
     inputTeks.style.display = 'block';
     inputTeks.value = '';
-
-    // Setup preview
-    previewTeks.style.left = x + 'px';
-    previewTeks.style.top = (y - ukuranFont - 4) + 'px';
-    previewTeks.style.fontSize = ukuranFont + 'px';
-    previewTeks.style.fontWeight = 'bold';
-    previewTeks.style.fontFamily = 'sans-serif';
-    previewTeks.style.color = warna;
-    previewTeks.style.display = 'block';
-    previewTeks.textContent = '';
-
     inputTeks.focus();
+
+    // Tampilkan kursor awal di preview canvas guru
+    previewTeksFromRemote({ x, y, teks: '▍', warna, ukuranFont });
+    // Broadcast ke siswa juga
+    socket.emit('papan-tulis-preview-teks', {
+      ruangId: ruangSaatIni.id,
+      data: { x, y, teks: '▍', warna, ukuranFont }
+    });
   }
 
   function sembunyikanInputTeks() {
     inputTeks.style.display = 'none';
     inputTeks.value = '';
-    if (previewTeks) { previewTeks.style.display = 'none'; previewTeks.textContent = ''; }
-    // Broadcast hide preview
-    socket.emit('papan-tulis-preview-teks', {
-      ruangId: ruangSaatIni.id,
-      data: null // null = hapus preview
-    });
+    hapusPreviewCanvas();
+    socket.emit('papan-tulis-preview-teks', { ruangId: ruangSaatIni.id, data: null });
   }
 
-  // Update preview saat guru mengetik
+  // Update preview saat guru mengetik — tampil real-time di canvas overlay
   inputTeks.addEventListener('input', () => {
     const teks = inputTeks.value;
     const warna = document.getElementById('warna-papan').value;
     const ukuran = parseInt(document.getElementById('ukuran-kuas').value);
     const ukuranFont = Math.max(14, ukuran * 3);
-    // Update preview lokal
-    previewTeks.textContent = teks || '';
-    // Broadcast preview ke siswa
+    const tampilTeks = (teks || '') + '▍';
+    const previewData = { x: teksPosX, y: teksPosY, teks: tampilTeks, warna, ukuranFont };
+    // Guru lihat preview di canvas-nya sendiri
+    previewTeksFromRemote(previewData);
+    // Broadcast preview ke siswa (real-time setiap keystroke)
     socket.emit('papan-tulis-preview-teks', {
       ruangId: ruangSaatIni.id,
-      data: teks ? { x: teksPosX, y: teksPosY, teks, warna, ukuranFont } : null
+      data: previewData
     });
   });
 
@@ -1433,48 +1464,96 @@ function teksFromRemote(data) {
   tuliskanTeksKeCanvas(ctx, data.x, data.y, data.teks, data.warna, data.ukuranFont);
 }
 
-// Preview teks real-time dari guru (diterima siswa)
+// Preview teks real-time dari guru (diterima siswa) — pakai canvas overlay
 function previewTeksFromRemote(data) {
-  const previewEl = document.getElementById('preview-teks-papan');
-  if (!previewEl) return;
-  if (!data) {
-    previewEl.style.display = 'none';
-    previewEl.textContent = '';
-    return;
-  }
-  previewEl.style.left = data.x + 'px';
-  previewEl.style.top = (data.y - data.ukuranFont - 4) + 'px';
-  previewEl.style.fontSize = data.ukuranFont + 'px';
-  previewEl.style.fontWeight = 'bold';
-  previewEl.style.fontFamily = 'sans-serif';
-  previewEl.style.color = data.warna;
-  previewEl.style.display = 'block';
-  previewEl.textContent = data.teks;
+  const pCanvas = document.getElementById('papan-preview-canvas');
+  if (!pCanvas) return;
+  const pCtx = pCanvas.getContext('2d');
+  pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+  if (!data || !data.teks) return;
+  // Gambar teks preview dengan efek kursor berkedip
+  pCtx.font = `bold ${data.ukuranFont}px sans-serif`;
+  pCtx.fillStyle = data.warna;
+  pCtx.globalAlpha = 0.85;
+  pCtx.fillText(data.teks, data.x, data.y);
+  pCtx.globalAlpha = 1;
+  // Garis kursor di akhir teks
+  const lebar = pCtx.measureText(data.teks).width;
+  pCtx.strokeStyle = data.warna;
+  pCtx.lineWidth = 2;
+  pCtx.beginPath();
+  pCtx.moveTo(data.x + lebar + 2, data.y - data.ukuranFont + 2);
+  pCtx.lineTo(data.x + lebar + 2, data.y + 4);
+  pCtx.stroke();
 }
 
 function gantiAlat(alat) {
   alatPapan = alat;
   const canvas = document.getElementById('papan-canvas');
   const wrapper = document.getElementById('papan-zoom-wrapper');
-  // Update cursor
   canvas.className = alat === 'teks' ? 'mode-teks' : alat === 'pan' ? 'mode-pan' : alat === 'hapus' ? 'mode-hapus' : '';
   if (wrapper) wrapper.className = alat === 'pan' ? 'mode-pan' : '';
-  // Sembunyikan input teks jika ganti alat lain
   if (alat !== 'teks') {
     const inp = document.getElementById('input-teks-papan');
     if (inp) inp.style.display = 'none';
-    const prev = document.getElementById('preview-teks-papan');
-    if (prev) { prev.style.display = 'none'; prev.textContent = ''; }
+    // Hapus preview canvas
+    const pCanvas = document.getElementById('papan-preview-canvas');
+    if (pCanvas) pCanvas.getContext('2d').clearRect(0, 0, pCanvas.width, pCanvas.height);
+  }
+}
+
+// =====================================================
+// DIALOG CUSTOM (ganti confirm bawaan agar tidak interfere)
+// =====================================================
+function dialogKonfirmasi(pesan, onOk) {
+  const overlay = document.createElement('div');
+  overlay.className = 'dialog-overlay';
+  overlay.innerHTML = `
+    <div class="dialog-box">
+      <p>${pesan}</p>
+      <div class="dialog-btns">
+        <button class="btn-batal" id="dlg-batal">Batal</button>
+        <button class="btn-ok" id="dlg-ok">Ya, Lanjutkan</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#dlg-batal').onclick = () => overlay.remove();
+  overlay.querySelector('#dlg-ok').onclick = () => { overlay.remove(); onOk(); };
+}
+
+// =====================================================
+// CHAT TOGGLE
+// =====================================================
+let chatTerbuka = false;
+let unreadChat = 0;
+
+function toggleChat() {
+  chatTerbuka = !chatTerbuka;
+  const panel = document.getElementById('sidebar-chat');
+  if (chatTerbuka) {
+    panel.classList.remove('tersembunyi');
+    // Reset unread badge
+    unreadChat = 0;
+    const badge = document.getElementById('badge-chat-unread');
+    badge.style.display = 'none';
+    // Scroll ke bawah
+    setTimeout(() => {
+      const area = document.getElementById('area-chat');
+      if (area) area.scrollTop = area.scrollHeight;
+    }, 50);
+  } else {
+    panel.classList.add('tersembunyi');
   }
 }
 
 function bersihkanPapan() {
-  if (!confirm('Yakin ingin membersihkan papan tulis?')) return;
-  simpanStateUndoPapan();
-  const canvas = document.getElementById('papan-canvas');
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  socket.emit('papan-tulis-bersihkan', { ruangId: ruangSaatIni.id });
+  dialogKonfirmasi('Yakin ingin membersihkan papan tulis?', () => {
+    simpanStateUndoPapan();
+    const canvas = document.getElementById('papan-canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    socket.emit('papan-tulis-bersihkan', { ruangId: ruangSaatIni.id });
+  });
 }
 
 // =====================================================
@@ -1781,10 +1860,10 @@ function gantiPanel(nama, el) {
 }
 
 function keluarRuang() {
-  if (confirm('Yakin ingin keluar dari ruang kelas?')) {
+  dialogKonfirmasi('Yakin ingin keluar dari ruang kelas?', () => {
     if (streamLokal) streamLokal.getTracks().forEach(t => t.stop());
     window.location.href = penggunaSaatIni.role === 'guru' ? '/guru' : '/siswa';
-  }
+  });
 }
 
 if ('serviceWorker' in navigator) {
