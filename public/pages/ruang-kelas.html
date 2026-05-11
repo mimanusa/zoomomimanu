@@ -633,7 +633,13 @@ function hubungkanSocket() {
 
   // ---- Presentasi dari Guru ----
   socket.on('presentasi-halaman', ({ imageData, halaman, totalHalaman, namaFile }) => {
-    gambarKeCanvas(imageData);
+    // Otomatis pindah ke tab Papan Tulis agar siswa langsung melihat presentasi
+    const tabPapan = document.querySelector('.tab-nav button:nth-child(2)');
+    gantiPanel('papan', tabPapan);
+    // Beri sedikit jeda agar canvas selesai di-resize sebelum digambar
+    setTimeout(() => {
+      gambarKeCanvas(imageData);
+    }, 80);
     tampilNotif('📄 ' + namaFile + ' — Halaman ' + halaman + '/' + totalHalaman);
   });
 
