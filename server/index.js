@@ -26,6 +26,36 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
+// =====================================================
+// API: KONFIGURASI WebRTC (STUN + TURN server)
+// Diperlukan agar video call bisa menembus jaringan
+// berbeda (sekolah <-> rumah)
+// =====================================================
+app.get('/api/webrtc-config', (req, res) => {
+  res.json({
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' },
+      {
+        urls: 'turn:openrelay.metered.ca:80',
+        username: 'openrelayproject',
+        credential: 'openrelayproject'
+      },
+      {
+        urls: 'turn:openrelay.metered.ca:443',
+        username: 'openrelayproject',
+        credential: 'openrelayproject'
+      },
+      {
+        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+        username: 'openrelayproject',
+        credential: 'openrelayproject'
+      }
+    ]
+  });
+});
+
 // ---- HELPER: Baca & Tulis Database ----
 const DB_PATH = path.join(__dirname, '../data/database.json');
 
@@ -305,6 +335,15 @@ io.on('connection', (socket) => {
 
   socket.on('papan-tulis-bersihkan', ({ ruangId }) => {
     socket.to(ruangId).emit('papan-tulis-bersihkan');
+  });
+
+  // Presentasi dokumen - broadcast ke semua peserta di ruang
+  socket.on('presentasi-halaman', ({ ruangId, imageData, halaman, totalHalaman, namaFile }) => {
+    socket.to(ruangId).emit('presentasi-halaman', { imageData, halaman, totalHalaman, namaFile });
+  });
+
+  socket.on('presentasi-selesai', ({ ruangId }) => {
+    socket.to(ruangId).emit('presentasi-selesai');
   });
 
   socket.on('angkat-tangan', ({ ruangId, namaUser }) => {
