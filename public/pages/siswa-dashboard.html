@@ -135,11 +135,7 @@
       font-size: 16px;
     }
 
-    .kode-input-row {
-      display: flex;
-      gap: 12px;
-    }
-    .kode-input-row .input-field { flex: 1; }
+
 
     .kartu-ruang-tersedia {
       display: flex;
@@ -207,7 +203,7 @@
     @media (max-width: 600px) {
       .stats-row { grid-template-columns: 1fr 1fr; }
       .banner-hero { flex-direction: column; text-align: center; }
-      .kode-input-row { flex-direction: column; }
+
     }
   </style>
 </head>
@@ -268,27 +264,6 @@
       </div>
     </div>
 
-    <!-- Masuk dengan Kode -->
-    <div class="section-kartu">
-      <h3>
-        <div class="section-icon" style="background:#DBEAFE;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1565FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2l-9.6 9.6"/><path d="M15.5 7.5l3 3L22 7l-3-3"/></svg>
-        </div>
-        Masuk dengan Kode Ruang
-      </h3>
-      <div class="kode-input-row">
-        <input type="text" id="kode-input" class="input-field"
-          placeholder="Contoh: KELAS6-09KF"
-          style="text-transform:uppercase; font-weight:800; font-family:monospace; font-size:16px; letter-spacing:0.05em;"
-          oninput="this.value=this.value.toUpperCase()"
-          onkeydown="if(event.key==='Enter') masukDenganKode()" />
-        <button class="btn btn-utama" onclick="masukDenganKode()">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><path d="M6 12h12"/></svg>
-          Masuk
-        </button>
-      </div>
-    </div>
-
     <!-- Ruang Kelas Tersedia -->
     <div class="section-kartu">
       <h3>
@@ -336,6 +311,8 @@
       document.getElementById('kelas-siswa-info').textContent = penggunaSaatIni.kelas;
 
       muatRuang();
+      // Auto-refresh setiap 10 detik agar ruang aktif langsung muncul
+      setInterval(muatRuang, 10000);
     };
 
     async function muatRuang() {
@@ -359,18 +336,12 @@
       container.innerHTML = ruangList.map(r => `
         <div class="kartu-ruang-tersedia" onclick="masukRuang('${r.id}', '${r.kode}', '${r.judul}')">
           <div>
-            <div class="kode">${r.kode}</div>
-            <div class="detail">${r.judul} · ${r.namaGuru} · ${new Date(r.dibuatPada).toLocaleTimeString('id-ID')}</div>
+            <div class="kode">${r.judul}</div>
+            <div class="detail">👨‍🏫 ${r.namaGuru} · Dibuka ${new Date(r.dibuatPada).toLocaleTimeString('id-ID')}</div>
           </div>
           <button class="btn btn-utama btn-kecil">Masuk →</button>
         </div>
       `).join('');
-    }
-
-    function masukDenganKode() {
-      const kode = document.getElementById('kode-input').value.trim().toUpperCase();
-      if (!kode) return tampilNotif('❌ Masukkan kode ruang!');
-      masukRuangDenganKode(kode);
     }
 
     async function masukRuangDenganKode(kode) {
