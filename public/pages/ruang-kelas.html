@@ -865,6 +865,8 @@ function setupPapanTulis() {
   // Ukuran canvas
   function updateUkuranCanvas() {
     const parent = canvas.parentElement;
+    // Hanya update jika panel sedang tampil (clientWidth > 0)
+    if (parent.clientWidth === 0) return;
     canvas.width = parent.clientWidth;
     canvas.height = parent.clientHeight - 
       (document.getElementById('toolbar-papan').offsetHeight || 0) - 
@@ -990,6 +992,14 @@ function gambarKeCanvas(imageData) {
   const ctx = canvas.getContext('2d');
   const img = new Image();
   img.onload = () => {
+    // Pastikan canvas punya ukuran - inisialisasi jika belum
+    if (canvas.width === 0 || canvas.height === 0) {
+      const parent = canvas.parentElement;
+      canvas.width = parent.clientWidth || 1280;
+      canvas.height = parent.clientHeight
+        - (document.getElementById('toolbar-papan').offsetHeight || 0)
+        - (document.getElementById('info-papan-siswa').offsetHeight || 0) || 720;
+    }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
     const x = (canvas.width - img.width * scale) / 2;
@@ -1252,6 +1262,18 @@ function gantiPanel(nama, el) {
   el.classList.add('aktif');
 
   if (nama === 'tugas') document.getElementById('badge-tugas').style.display = 'none';
+
+  // Inisialisasi ulang ukuran canvas setiap kali tab papan tulis dibuka
+  if (nama === 'papan') {
+    setTimeout(() => {
+      const canvas = document.getElementById('papan-canvas');
+      const parent = canvas.parentElement;
+      canvas.width = parent.clientWidth;
+      canvas.height = parent.clientHeight
+        - (document.getElementById('toolbar-papan').offsetHeight || 0)
+        - (document.getElementById('info-papan-siswa').offsetHeight || 0);
+    }, 50);
+  }
 }
 
 function keluarRuang() {
