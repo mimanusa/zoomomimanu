@@ -631,6 +631,18 @@ function hubungkanSocket() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   });
 
+  // ---- Presentasi dari Guru ----
+  socket.on('presentasi-halaman', ({ imageData, halaman, totalHalaman, namaFile }) => {
+    gambarKeCanvas(imageData);
+    tampilNotif('📄 ' + namaFile + ' — Halaman ' + halaman + '/' + totalHalaman);
+  });
+
+  socket.on('presentasi-selesai', () => {
+    const canvas = document.getElementById('papan-canvas');
+    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+    tampilNotif('✅ Presentasi selesai');
+  });
+
   // ---- Tugas Baru ----
   socket.on('tugas-baru', (tugas) => {
     tampilTugasBaru(tugas);
@@ -1153,17 +1165,7 @@ function akhiriPresentasi() {
   socket.emit('papan-tulis-bersihkan', { ruangId: ruangSaatIni.id });
 }
 
-// Terima presentasi dari guru (sisi siswa)
-socket.on('presentasi-halaman', ({ imageData, halaman, totalHalaman, namaFile }) => {
-  gambarKeCanvas(imageData);
-  tampilNotif('📄 ' + namaFile + ' — Halaman ' + halaman + '/' + totalHalaman);
-});
-
-socket.on('presentasi-selesai', () => {
-  document.getElementById('papan-canvas').getContext('2d')
-    .clearRect(0, 0, document.getElementById('papan-canvas').width, document.getElementById('papan-canvas').height);
-  tampilNotif('✅ Presentasi selesai');
-});
+// (socket presentasi dipindah ke dalam hubungkanSocket())
 
 // =====================================================
 // TUGAS
@@ -1236,6 +1238,13 @@ async function kirimJawaban(tugasId, judulTugas) {
 // =====================================================
 // NAVIGASI
 // =====================================================
+function tampilNotif(pesan) {
+  const el = document.getElementById('notif-tangan');
+  el.textContent = pesan;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 3000);
+}
+
 function gantiPanel(nama, el) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('tampil'));
   document.getElementById(`panel-${nama}`).classList.add('tampil');
