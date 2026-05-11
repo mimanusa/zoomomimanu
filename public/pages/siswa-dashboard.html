@@ -354,7 +354,7 @@
 
     function masukRuang(id, kode, judul) {
       localStorage.setItem('ruangSaatIni', JSON.stringify({ id, kode, judul }));
-      window.open(`/ruang/${id}`, '_blank');
+      window.location.href = `/ruang/${id}`;
     }
 
     function tampilNotif(pesan) {
