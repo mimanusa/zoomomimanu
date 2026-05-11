@@ -3,1268 +3,220 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ruang ZooMimanu</title>
+  <title>Ruang ZooMimanu - Terintegrasi</title>
   <link rel="stylesheet" href="/css/style.css">
-  <!-- PWA -->
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0F172A">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="ZooMimanu">
-  <link rel="apple-touch-icon" href="/icons/icon-152x152.png">
-  <link rel="icon" type="image/png" href="/favicon.png">
   <style>
     * { box-sizing: border-box; }
-    body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: #0f172a; }
+    body { 
+      margin: 0; background: #0f172a; color: white; font-family: 'Nunito', sans-serif; 
+      height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+    }
 
-    /* ---- HEADER ---- */
+    /* HEADER */
     .header-ruang {
-      background: #1e293b;
-      color: white;
-      padding: 10px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-shrink: 0;
-      border-bottom: 1px solid #334155;
-    }
-    .header-ruang .kiri { display: flex; align-items: center; gap: 12px; }
-    .header-ruang .kode-ruang { font-family: monospace; font-size: 16px; font-weight: 700; color: #60a5fa; }
-    .header-ruang .status-live { 
-      background: #ef4444; color: white; padding: 3px 10px; border-radius: 100px;
-      font-size: 11px; font-weight: 700; animation: blink 1.5s infinite;
-    }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.5} }
-
-    /* ---- AREA UTAMA ---- */
-    .area-utama {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
+      background: #1e293b; padding: 12px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid #334155; height: 60px;
     }
 
-    /* ---- VIDEO AREA ---- */
-    .area-video {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    /* Tab navigasi */
-    .tab-nav {
-      display: flex;
-      background: #1e293b;
-      border-bottom: 1px solid #334155;
-    }
-    .tab-nav button {
-      padding: 10px 20px;
-      background: transparent;
-      border: none;
-      color: #94a3b8;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 600;
-      border-bottom: 3px solid transparent;
-      transition: all 0.2s;
-    }
-    .tab-nav button.aktif { color: #60a5fa; border-bottom-color: #60a5fa; }
-
-    /* Panel konten */
-    .panel { display: none; flex: 1; overflow: hidden; }
-    .panel.tampil { display: flex; }
-
-    /* ---- PANEL VIDEO ---- */
-    #panel-video { flex-direction: column; background: #0f172a; }
-    .grid-video {
-      flex: 1;
+    /* MAIN LAYOUT: Grid 3 Kolom */
+    .kontainer-utama {
       display: grid;
-      gap: 8px;
-      padding: 12px;
-      overflow-y: auto;
-      align-content: center;
-      grid-template-columns: repeat(2, 1fr);
-    }
-    /* 1 peserta - full width */
-    .grid-video.peserta-1 { grid-template-columns: 1fr; max-width: 720px; margin: 0 auto; width: 100%; }
-    /* 2 peserta - 2 kolom */
-    .grid-video.peserta-2 { grid-template-columns: repeat(2, 1fr); }
-    /* 3-4 peserta - 2 kolom */
-    .grid-video.peserta-3,
-    .grid-video.peserta-4 { grid-template-columns: repeat(2, 1fr); }
-    /* 5-6 peserta - 3 kolom */
-    .grid-video.peserta-5,
-    .grid-video.peserta-6 { grid-template-columns: repeat(3, 1fr); }
-    /* 7+ peserta - 4 kolom */
-    .grid-video.peserta-banyak { grid-template-columns: repeat(4, 1fr); }
-
-    .kotak-video {
-      position: relative;
-      background: #1e293b;
-      border-radius: 10px;
+      grid-template-columns: 320px 1fr 300px;
+      flex: 1;
+      gap: 10px;
+      padding: 10px;
       overflow: hidden;
-      aspect-ratio: 16/9;
-      width: 100%;
-    }
-    .kotak-video video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-    .kotak-video .label-nama {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: linear-gradient(transparent, rgba(0,0,0,0.8));
-      color: white;
-      padding: 16px 10px 8px;
-      font-size: 13px;
-      font-weight: 600;
-    }
-    .kotak-video .avatar-besar {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 56px;
-      background: #334155;
     }
 
-    /* Kontrol video bawah */
-    .kontrol-video {
-      background: #1e293b;
-      padding: 12px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      border-top: 1px solid #334155;
+    /* KOLOM 1: Video Call (In-Tab) */
+    .panel-video {
+      background: #111827; border-radius: 15px; overflow: hidden;
+      display: flex; flex-direction: column; border: 1px solid #334155;
+    }
+    #tampilan-video { flex: 1; position: relative; background: #000; }
+    video { width: 100%; height: 100%; object-fit: cover; }
+    .kontrol-mini {
+      padding: 10px; background: #1e293b; display: flex; justify-content: center; gap: 8px;
+    }
+    .btn-bulat {
+      width: 40px; height: 40px; border-radius: 50%; border: none;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
     }
 
-    .btn-kontrol {
-      width: 48px; height: 48px;
-      border-radius: 50%;
-      border: none;
-      cursor: pointer;
-      font-size: 18px;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    /* KOLOM 2: Papan Tulis (Whiteboard) */
+    .panel-papan {
+      background: white; border-radius: 15px; display: flex; flex-direction: column;
+      overflow: hidden; border: 1px solid #334155;
     }
-    .btn-kontrol.aktif { background: #3b82f6; color: white; }
-    .btn-kontrol.nonaktif { background: #ef4444; color: white; }
-    .btn-kontrol.merah { background: #ef4444; color: white; }
-    .btn-kontrol.abu { background: #334155; color: white; }
-
-    /* ---- PANEL PAPAN TULIS ---- */
-    #panel-papan { background: white; flex-direction: column; }
     .toolbar-papan {
-      display: flex;
-      gap: 8px;
-      padding: 10px 16px;
-      background: #f8f9fa;
-      border-bottom: 1px solid #e5e7eb;
-      flex-wrap: wrap;
+      background: #f1f5f9; padding: 8px; border-bottom: 1px solid #e2e8f0;
+      display: flex; gap: 8px; align-items: center;
     }
-    .toolbar-papan label { font-size: 12px; color: #666; align-self: center; }
-    #papan-canvas { flex: 1; cursor: crosshair; touch-action: none; }
-    .siswa-papan-info { padding: 10px 16px; background: #dbeafe; font-size: 13px; color: #1e40af; display: none; }
+    #papan-canvas { flex: 1; cursor: crosshair; }
 
-    /* ---- PANEL TUGAS ---- */
-    #panel-tugas { flex-direction: column; background: white; overflow-y: auto; padding: 20px; }
-
-    .kartu-tugas {
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 14px;
+    /* KOLOM 3: Tugas & Chat */
+    .panel-kanan {
+      display: flex; flex-direction: column; gap: 10px; overflow-y: auto;
     }
-    .kartu-tugas .judul-tugas { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
-    .kartu-tugas .soal-tugas {
-      background: #fefce8;
-      border: 1px solid #fef08a;
-      border-radius: 8px;
-      padding: 12px;
-      font-size: 14px;
-      margin-bottom: 14px;
+    .blok-tugas {
+      background: #1e293b; border-radius: 15px; padding: 15px;
+      border: 1px solid #334155;
     }
-    .kartu-tugas textarea {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      font-size: 14px;
-      resize: vertical;
-      min-height: 80px;
+    .blok-tugas textarea {
+      width: 100%; background: #0f172a; border: 1px solid #475569;
+      border-radius: 8px; color: white; padding: 10px; margin: 10px 0; resize: none;
+    }
+    .btn-aksi {
+      width: 100%; padding: 10px; border: none; border-radius: 8px;
+      font-weight: bold; cursor: pointer; background: #10b981; color: white;
+    }
+    .list-jawaban {
+      margin-top: 15px; border-top: 1px solid #334155; padding-top: 10px;
     }
 
-    /* ---- SIDEBAR CHAT ---- */
-    .sidebar-chat {
-      width: 280px;
-      background: #1e293b;
-      display: flex;
-      flex-direction: column;
-      border-left: 1px solid #334155;
-      flex-shrink: 0;
-    }
-    .sidebar-chat h4 { 
-      padding: 12px 16px;
-      color: white;
-      font-size: 13px;
-      border-bottom: 1px solid #334155;
-    }
-
-    /* Daftar peserta */
-    .daftar-peserta-chat {
-      padding: 10px 16px;
-      border-bottom: 1px solid #334155;
-      max-height: 120px;
-      overflow-y: auto;
-    }
-    .item-peserta {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: #94a3b8;
-      font-size: 12px;
-      padding: 3px 0;
-    }
-    .item-peserta .dot { width: 6px; height: 6px; background: #22c55e; border-radius: 50%; flex-shrink: 0; }
-    .item-peserta .guru-tag { color: #60a5fa; font-weight: 700; }
-
-    /* Pesan chat */
-    .area-pesan-chat {
-      flex: 1;
-      overflow-y: auto;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .buble-chat {
-      background: #334155;
-      border-radius: 8px;
-      padding: 8px 10px;
-      font-size: 12px;
-    }
-    .buble-chat .pengirim { font-weight: 700; margin-bottom: 2px; }
-    .buble-chat .pengirim.guru { color: #60a5fa; }
-    .buble-chat .pengirim.siswa { color: #4ade80; }
-    .buble-chat .isi { color: #e2e8f0; }
-    .buble-chat .wkt { font-size: 10px; color: #64748b; margin-top: 3px; }
-
-    /* Input chat */
-    .input-chat-area {
-      padding: 10px;
-      border-top: 1px solid #334155;
-      display: flex;
-      gap: 6px;
-    }
-    .input-chat-area input {
-      flex: 1;
-      background: #334155;
-      border: none;
-      border-radius: 8px;
-      padding: 8px 12px;
-      color: white;
-      font-size: 13px;
-    }
-    .input-chat-area input::placeholder { color: #64748b; }
-    .input-chat-area input:focus { outline: 1px solid #60a5fa; }
-    .input-chat-area button { 
-      background: #3b82f6;
-      border: none;
-      border-radius: 8px;
-      padding: 8px 12px;
-      color: white;
-      cursor: pointer;
-      font-size: 16px;
-    }
-
-    /* Notifikasi angkat tangan */
-    .notif-tangan {
-      position: fixed;
-      top: 70px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #f59e0b;
-      color: #451a03;
-      padding: 10px 20px;
-      border-radius: 100px;
-      font-weight: 700;
-      font-size: 14px;
-      display: none;
-      z-index: 100;
-      animation: slideIn 0.3s ease;
+    /* Responsif */
+    @media (max-width: 1100px) {
+      .kontainer-utama { grid-template-columns: 1fr; overflow-y: auto; }
+      .panel-video, .panel-papan { height: 400px; }
     }
   </style>
 </head>
 <body>
 
-<!-- Header -->
-<div class="header-ruang">
-  <div class="kiri">
-    <span style="display:flex;align-items:center;gap:8px;">
-      <img src="/icons/icon-72x72.png" alt="Z" style="width:28px;height:28px;border-radius:7px;object-fit:cover;">
-      ZooMimanu
-    </span>
-    <span class="kode-ruang" id="kode-ruang-header">-</span>
-    <span class="status-live">● LIVE</span>
+  <div class="header-ruang">
+    <div style="font-weight: 800; font-size: 18px; color: #60a5fa;">ZooMimanu <span style="color:white">Live</span></div>
+    <div id="info-status">🟢 Mengajar: <span id="nama-guru-header">...</span></div>
+    <button onclick="keluar()" style="background:#ef4444; color:white; border:none; padding:8px 16px; border-radius:8px; cursor:pointer;">Keluar</button>
   </div>
-  <div style="display:flex; gap:10px; align-items:center;">
-    <span style="color:#94a3b8; font-size:13px;" id="nama-saya-header">-</span>
-    <button class="btn btn-kecil btn-merah" onclick="keluarRuang()">Keluar</button>
-  </div>
-</div>
 
-<!-- Area Utama -->
-<div class="area-utama">
-  <!-- Kiri: Video + Papan + Tugas -->
-  <div class="area-video">
-    <!-- Tab -->
-    <div class="tab-nav">
-      <button class="aktif" onclick="gantiPanel('video', this)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-        Video Call
-      </button>
-      <button onclick="gantiPanel('papan', this)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        Papan Tulis
-      </button>
-      <button onclick="gantiPanel('tugas', this)" id="tab-tugas">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        Tugas <span id="badge-tugas" style="display:none; background:#ef4444; color:white; border-radius:50%; padding:1px 6px; font-size:11px;">!</span>
-      </button>
-    </div>
-
-    <!-- Panel Video -->
-    <div class="panel tampil" id="panel-video">
-      <div class="grid-video" id="grid-video">
-        <!-- Video lokal -->
-        <div class="kotak-video" id="kotak-video-lokal">
-          <video id="video-lokal" autoplay muted playsinline></video>
-          <div class="avatar-besar" id="avatar-lokal" style="display:none;">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          </div>
-          <div class="label-nama" id="label-saya">Anda</div>
-        </div>
+  <div class="kontainer-utama">
+    
+    <div class="panel-video">
+      <div id="tampilan-video">
+        <video id="video-lokal" autoplay muted playsinline></video>
       </div>
-      <div class="kontrol-video">
-        <button class="btn-kontrol aktif" id="btn-mic" onclick="toggleMic()" title="Mikrofon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-        </button>
-        <button class="btn-kontrol aktif" id="btn-cam" onclick="toggleCam()" title="Kamera">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-        </button>
-        <button class="btn-kontrol abu" onclick="angkatTangan()" title="Angkat Tangan">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 00-4 0v5"/><path d="M14 10V4a2 2 0 00-4 0v2"/><path d="M10 10.5V6a2 2 0 00-4 0v8"/><path d="M18 8a2 2 0 114 0v6a8 8 0 01-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 012.83-2.82L8 15"/></svg>
-        </button>
-        <button class="btn-kontrol merah" onclick="keluarRuang()" title="Keluar">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        </button>
+      <div class="kontrol-mini">
+        <button class="btn-bulat" onclick="toggleCam()" style="background:#3b82f6;">📷</button>
+        <button class="btn-bulat" onclick="toggleMic()" style="background:#3b82f6;">🎤</button>
       </div>
     </div>
 
-    <!-- Panel Papan Tulis -->
-    <div class="panel" id="panel-papan">
-      <div class="siswa-papan-info" id="info-papan-siswa">
-        Kamu hanya bisa melihat papan tulis. Hanya guru yang bisa menggambar.
-      </div>
-      <div class="toolbar-papan" id="toolbar-papan">
-        <label>Warna:</label>
-        <input type="color" id="warna-papan" value="#000000" style="width:36px; height:32px; border:none; cursor:pointer; border-radius:4px;">
-        <label>Ukuran:</label>
-        <input type="range" id="ukuran-kuas" min="2" max="30" value="4" style="width:80px;">
-        <button class="btn btn-kecil btn-abu" onclick="gantiAlat('pena')">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-          Pena
-        </button>
-        <button class="btn btn-kecil btn-abu" onclick="gantiAlat('hapus')">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-          Hapus
-        </button>
-        <button class="btn btn-kecil btn-merah" onclick="bersihkanPapan()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
-          Bersihkan
-        </button>
-        <label class="btn btn-kecil" style="background:#6C3CE1;color:white;cursor:pointer;" title="Upload file untuk Presentasi (PDF, Gambar, Word, PPT)">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Presentasi
-          <input type="file" id="input-presentasi" accept="*/*" style="display:none;" onchange="muatPresentasi(this)">
-        </label>
-        <span id="info-presentasi" style="font-size:12px;color:#6C3CE1;font-weight:700;display:none;">
-          <button class="btn btn-kecil btn-abu" onclick="navigasiHalaman(-1)">&#8592;</button>
-          <span id="teks-halaman">1/1</span>
-          <button class="btn btn-kecil btn-abu" onclick="navigasiHalaman(1)">&#8594;</button>
-          <button class="btn btn-kecil btn-merah" onclick="akhiriPresentasi()" style="margin-left:4px;">Stop</button>
-        </span>
+    <div class="panel-papan">
+      <div class="toolbar-papan">
+        <input type="color" id="warna-papan" onchange="gantiWarna(this.value)">
+        <button onclick="hapusPapan()" style="padding:5px 10px;">🗑️ Bersihkan</button>
+        <span style="color:#64748b; font-size:12px; margin-left:auto;">Papan Tulis Interaktif</span>
       </div>
       <canvas id="papan-canvas"></canvas>
     </div>
 
-    <!-- Panel Tugas -->
-    <div class="panel" id="panel-tugas">
-      <div id="konten-tugas">
-        <p style="color:var(--abu); text-align:center; padding:40px;">Belum ada tugas dari guru.</p>
+    <div class="panel-kanan">
+      <div class="blok-tugas">
+        <h4 style="margin:0;">📝 Berikan Tugas</h4>
+        <textarea id="teks-tugas" rows="4" placeholder="Tulis soal atau instruksi tugas..."></textarea>
+        <button class="btn-aksi" onclick="postTugas()">Kirim ke Semua Siswa</button>
+        
+        <div class="list-jawaban">
+          <h5 style="margin-bottom:8px;">Jawaban Siswa:</h5>
+          <div id="container-jawaban" style="font-size:13px; color:#94a3b8; text-align:center;">
+            Belum ada jawaban masuk.
+          </div>
+        </div>
+      </div>
+
+      <div class="blok-tugas" style="flex:1;">
+        <h4 style="margin:0;">💬 Chat Kelas</h4>
+        <div id="box-chat" style="height:150px; overflow-y:auto; margin:10px 0; background:rgba(0,0,0,0.2); border-radius:5px; padding:8px; font-size:12px;"></div>
+        <div style="display:flex; gap:5px;">
+          <input type="text" id="input-chat" style="flex:1; background:#0f172a; border:1px solid #475569; color:white; padding:5px; border-radius:4px;">
+          <button onclick="kirimChat()">🚀</button>
+        </div>
       </div>
     </div>
+
   </div>
 
-  <!-- Sidebar Chat -->
-  <div class="sidebar-chat">
-    <h4>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-      Chat &amp; Peserta
-    </h4>
-    
-    <!-- Peserta -->
-    <div class="daftar-peserta-chat" id="daftar-peserta">
-      <div class="item-peserta">
-        <div class="dot"></div>
-        <span id="nama-sendiri-list">Memuat...</span>
-      </div>
-    </div>
+  <script>
+    // Konfigurasi Awal
+    const user = JSON.parse(localStorage.getItem('penggunaSaatIni'));
+    document.getElementById('nama-guru-header').textContent = user ? user.namaGuru || user.nama : "Guru";
 
-    <!-- Pesan -->
-    <div class="area-pesan-chat" id="area-chat"></div>
-
-    <!-- Input -->
-    <div class="input-chat-area">
-      <input type="text" id="input-chat" placeholder="Tulis pesan..." 
-        onkeydown="if(event.key==='Enter') kirimChat()" />
-      <button onclick="kirimChat()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- Notifikasi angkat tangan -->
-<div class="notif-tangan" id="notif-tangan"></div>
-
-<!-- Socket.io & Simple-Peer (WebRTC) -->
-<script src="/socket.io/socket.io.js"></script>
-
-<script>
-// =====================================================
-// INISIALISASI
-// =====================================================
-let penggunaSaatIni = null;
-let ruangSaatIni = null;
-let socket = null;
-let streamLokal = null;
-let mikAktif = true;
-let camAktif = true;
-let alatPapan = 'pena';
-
-// Menyimpan koneksi WebRTC per socket pengguna lain
-const koneksiPeer = {};
-const streamPeer = {};
-
-window.onload = async function() {
-  const dataUser = localStorage.getItem('penggunaSaatIni');
-  const dataRuang = localStorage.getItem('ruangSaatIni');
-
-  if (!dataUser || !dataRuang) {
-    alert('Session habis. Silakan login kembali.');
-    window.location.href = '/';
-    return;
-  }
-
-  penggunaSaatIni = JSON.parse(dataUser);
-  ruangSaatIni = JSON.parse(dataRuang);
-
-  // Update UI header
-  document.getElementById('kode-ruang-header').textContent = ruangSaatIni.kode;
-  document.getElementById('nama-saya-header').textContent = 
-    penggunaSaatIni.namaGuru || penggunaSaatIni.nama;
-  document.getElementById('label-saya').textContent = 
-    `${penggunaSaatIni.namaGuru || penggunaSaatIni.nama} (Anda)`;
-  document.getElementById('nama-sendiri-list').textContent = 
-    `${penggunaSaatIni.namaGuru || penggunaSaatIni.nama} (Anda) ` + 
-    (penggunaSaatIni.role === 'guru' ? '👩‍🏫' : '🎒');
-
-  // Tampilkan/sembunyikan toolbar papan
-  if (penggunaSaatIni.role === 'siswa') {
-    document.getElementById('toolbar-papan').style.display = 'none';
-    document.getElementById('info-papan-siswa').style.display = 'block';
-  }
-
-  // Mulai kamera & mic
-  await mulaiMedia();
-
-  // Hubungkan ke server
-  hubungkanSocket();
-
-  // Setup papan tulis
-  setupPapanTulis();
-};
-
-// =====================================================
-// MEDIA (KAMERA & MIC)
-// =====================================================
-async function mulaiMedia() {
-  try {
-    streamLokal = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    const videoEl = document.getElementById('video-lokal');
-    videoEl.srcObject = streamLokal;
-    document.getElementById('avatar-lokal').style.display = 'none';
-  } catch (err) {
-    console.log('Kamera tidak tersedia:', err);
-    // Buat stream kosong jika tidak ada kamera
-    document.getElementById('avatar-lokal').style.display = 'flex';
-    document.getElementById('video-lokal').style.display = 'none';
-    try {
-      // Coba audio saja
-      streamLokal = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    } catch(e) {
-      console.log('Mic juga tidak tersedia');
-    }
-  }
-}
-
-function toggleMic() {
-  mikAktif = !mikAktif;
-  if (streamLokal) {
-    streamLokal.getAudioTracks().forEach(t => t.enabled = mikAktif);
-  }
-  const btn = document.getElementById('btn-mic');
-  btn.innerHTML = mikAktif
-    ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`
-    : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 005.12 2.12M15 9.34V4a3 3 0 00-5.94-.6"/><path d="M17 16.95A7 7 0 015 12v-2m14 0v2a7 7 0 01-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`;
-  btn.className = `btn-kontrol ${mikAktif ? 'aktif' : 'nonaktif'}`;
-  socket.emit('toggle-audio', { ruangId: ruangSaatIni.id, status: mikAktif });
-}
-
-function toggleCam() {
-  camAktif = !camAktif;
-  if (streamLokal) {
-    streamLokal.getVideoTracks().forEach(t => t.enabled = camAktif);
-  }
-  const btn = document.getElementById('btn-cam');
-  btn.innerHTML = camAktif
-    ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>`
-    : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M21 21H3a2 2 0 01-2-2V8a2 2 0 012-2h3m3-3h6l2 3h4a2 2 0 012 2v9.34m-7.72-2.06a4 4 0 11-5.56-5.56"/></svg>`;
-  btn.className = `btn-kontrol ${camAktif ? 'aktif' : 'nonaktif'}`;
-  socket.emit('toggle-video', { ruangId: ruangSaatIni.id, status: camAktif });
-}
-
-// =====================================================
-// SOCKET.IO - KONEKSI REAL-TIME
-// =====================================================
-function hubungkanSocket() {
-  socket = io();
-  const namaUser = penggunaSaatIni.namaGuru || penggunaSaatIni.nama;
-  const role = penggunaSaatIni.role;
-
-  // Bergabung ke ruang
-  socket.emit('bergabung-ruang', {
-    ruangId: ruangSaatIni.id,
-    userId: penggunaSaatIni.id,
-    namaUser,
-    role
-  });
-
-  // Terima daftar pengguna online
-  socket.on('daftar-pengguna-online', (daftar) => {
-    daftar.forEach(pengguna => {
-      if (pengguna.socketId !== socket.id) {
-        tambahPeserta(pengguna.socketId, pengguna.namaUser, pengguna.role);
-        // Mulai WebRTC call ke pengguna yang sudah ada
-        mulaiWebRTC(pengguna.socketId, true);
+    // INTEGRASI VIDEO CALL (Langsung di Tab)
+    let streamLokal;
+    async function mulaiKamera() {
+      try {
+        streamLokal = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        document.getElementById('video-lokal').srcObject = streamLokal;
+      } catch (e) {
+        console.error("Akses kamera ditolak", e);
       }
-    });
-  });
-
-  // Ada pengguna baru bergabung
-  socket.on('pengguna-bergabung', ({ socketId, namaUser, role }) => {
-    tambahPeserta(socketId, namaUser, role);
-    tambahPesanChat('sistem', `${namaUser} bergabung ke ruangan`, '');
-    // Tunggu WebRTC offer dari mereka (bukan kita yang mulai)
-  });
-
-  // Pengguna keluar
-  socket.on('pengguna-keluar', ({ socketId, namaUser }) => {
-    hapusPeserta(socketId, namaUser);
-    hapusVideoRemote(socketId);
-    if (koneksiPeer[socketId]) {
-      koneksiPeer[socketId].close();
-      delete koneksiPeer[socketId];
     }
-  });
+    mulaiKamera();
 
-  // ---- WebRTC Signaling ----
-  socket.on('webrtc-offer', async ({ dariSocketId, offer }) => {
-    await terimaOffer(dariSocketId, offer);
-  });
-
-  socket.on('webrtc-answer', async ({ dariSocketId, answer }) => {
-    if (koneksiPeer[dariSocketId]) {
-      await koneksiPeer[dariSocketId].setRemoteDescription(answer);
+    function toggleCam() {
+      const v = streamLokal.getVideoTracks()[0];
+      v.enabled = !v.enabled;
     }
-  });
-
-  socket.on('webrtc-ice-candidate', async ({ dariSocketId, candidate }) => {
-    if (koneksiPeer[dariSocketId] && candidate) {
-      try { await koneksiPeer[dariSocketId].addIceCandidate(candidate); } catch(e) {}
+    function toggleMic() {
+      const a = streamLokal.getAudioTracks()[0];
+      a.enabled = !a.enabled;
     }
-  });
 
-  // ---- Chat ----
-  socket.on('pesan-chat', ({ namaUser, pesan, role, waktu }) => {
-    tambahPesanChat(namaUser, pesan, role, waktu);
-  });
-
-  // ---- Papan Tulis ----
-  socket.on('papan-tulis-gambar', (data) => {
-    gambarDariRemote(data);
-  });
-
-  socket.on('papan-tulis-bersihkan', () => {
+    // INTEGRASI PAPAN TULIS
     const canvas = document.getElementById('papan-canvas');
     const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-  });
+    let menggambar = false;
+    let warnaAktif = '#000000';
 
-  // ---- Presentasi dari Guru ----
-  socket.on('presentasi-halaman', ({ imageData, halaman, totalHalaman, namaFile }) => {
-    gambarKeCanvas(imageData);
-    tampilNotif('📄 ' + namaFile + ' — Halaman ' + halaman + '/' + totalHalaman);
-  });
-
-  socket.on('presentasi-selesai', () => {
-    const canvas = document.getElementById('papan-canvas');
-    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-    tampilNotif('✅ Presentasi selesai');
-  });
-
-  // ---- Tugas Baru ----
-  socket.on('tugas-baru', (tugas) => {
-    tampilTugasBaru(tugas);
-    document.getElementById('badge-tugas').style.display = 'inline';
-  });
-
-  // ---- Angkat Tangan ----
-  socket.on('siswa-angkat-tangan', ({ namaUser }) => {
-    if (penggunaSaatIni.role === 'guru') {
-      const el = document.getElementById('notif-tangan');
-      el.textContent = `✋ ${namaUser} angkat tangan!`;
-      el.style.display = 'block';
-      setTimeout(() => el.style.display = 'none', 4000);
+    function aturUkuranCanvas() {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
     }
-  });
-}
+    window.addEventListener('resize', aturUkuranCanvas);
+    aturUkuranCanvas();
 
-// =====================================================
-// WebRTC - VIDEO CALL
-// =====================================================
-
-// Cache konfigurasi WebRTC dari server (STUN + TURN)
-let webRTCConfig = null;
-async function ambilWebRTCConfig() {
-  if (webRTCConfig) return webRTCConfig;
-  try {
-    const resp = await fetch('/api/webrtc-config');
-    webRTCConfig = await resp.json();
-  } catch (e) {
-    // Fallback jika gagal ambil config
-    webRTCConfig = {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
-      ]
-    };
-  }
-  return webRTCConfig;
-}
-
-async function mulaiWebRTC(targetSocketId, kirimOffer) {
-  const config = await ambilWebRTCConfig();
-  const pc = new RTCPeerConnection(config);
-
-  koneksiPeer[targetSocketId] = pc;
-
-  // Tambahkan stream lokal
-  if (streamLokal) {
-    streamLokal.getTracks().forEach(track => pc.addTrack(track, streamLokal));
-  }
-
-  // Terima stream dari remote
-  pc.ontrack = (event) => {
-    tampilVideoRemote(targetSocketId, event.streams[0]);
-  };
-
-  // Kirim ICE candidate ke peer
-  pc.onicecandidate = (event) => {
-    if (event.candidate) {
-      socket.emit('webrtc-ice-candidate', {
-        tujuanSocketId: targetSocketId,
-        candidate: event.candidate
-      });
-    }
-  };
-
-  pc.onconnectionstatechange = () => {
-    if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
-      hapusVideoRemote(targetSocketId);
-    }
-  };
-
-  if (kirimOffer) {
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    socket.emit('webrtc-offer', { tujuanSocketId: targetSocketId, offer });
-  }
-}
-
-async function terimaOffer(dariSocketId, offer) {
-  await mulaiWebRTC(dariSocketId, false);
-  const pc = koneksiPeer[dariSocketId];
-  await pc.setRemoteDescription(offer);
-  const answer = await pc.createAnswer();
-  await pc.setLocalDescription(answer);
-  socket.emit('webrtc-answer', { tujuanSocketId: dariSocketId, answer });
-}
-
-function tampilVideoRemote(socketId, stream) {
-  // Hapus jika sudah ada
-  hapusVideoRemote(socketId);
-
-  const div = document.createElement('div');
-  div.className = 'kotak-video';
-  div.id = `video-${socketId}`;
-
-  const video = document.createElement('video');
-  video.autoplay = true;
-  video.playsinline = true;
-  video.srcObject = stream;
-
-  const label = document.createElement('div');
-  label.className = 'label-nama';
-  const peserta = document.querySelector(`[data-socket="${socketId}"]`);
-  label.textContent = peserta ? peserta.dataset.nama : 'Peserta';
-
-  div.appendChild(video);
-  div.appendChild(label);
-  document.getElementById('grid-video').appendChild(div);
-  updateGridVideo();
-}
-
-function hapusVideoRemote(socketId) {
-  const el = document.getElementById(`video-${socketId}`);
-  if (el) el.remove();
-  updateGridVideo();
-}
-
-function updateGridVideo() {
-  const grid = document.getElementById('grid-video');
-  const jumlah = grid.querySelectorAll('.kotak-video').length;
-  // Hapus semua class peserta
-  grid.className = 'grid-video';
-  if (jumlah === 1) grid.classList.add('peserta-1');
-  else if (jumlah === 2) grid.classList.add('peserta-2');
-  else if (jumlah === 3) grid.classList.add('peserta-3');
-  else if (jumlah === 4) grid.classList.add('peserta-4');
-  else if (jumlah === 5) grid.classList.add('peserta-5');
-  else if (jumlah === 6) grid.classList.add('peserta-6');
-  else grid.classList.add('peserta-banyak');
-}
-
-// =====================================================
-// PESERTA
-// =====================================================
-function tambahPeserta(socketId, nama, role) {
-  const container = document.getElementById('daftar-peserta');
-  const div = document.createElement('div');
-  div.className = 'item-peserta';
-  div.id = `peserta-${socketId}`;
-  div.dataset.socket = socketId;
-  div.dataset.nama = nama;
-  div.innerHTML = `
-    <div class="dot"></div>
-    <span class="${role === 'guru' ? 'guru-tag' : ''}">
-      ${nama} ${role === 'guru' ? '👩‍🏫' : '🎒'}
-    </span>
-  `;
-  container.appendChild(div);
-}
-
-function hapusPeserta(socketId, nama) {
-  const el = document.getElementById(`peserta-${socketId}`);
-  if (el) el.remove();
-  tambahPesanChat('sistem', `${nama} meninggalkan ruangan`, '');
-}
-
-// =====================================================
-// CHAT
-// =====================================================
-function kirimChat() {
-  const input = document.getElementById('input-chat');
-  const pesan = input.value.trim();
-  if (!pesan) return;
-
-  const namaUser = penggunaSaatIni.namaGuru || penggunaSaatIni.nama;
-  socket.emit('kirim-chat', {
-    ruangId: ruangSaatIni.id,
-    namaUser,
-    pesan,
-    role: penggunaSaatIni.role
-  });
-
-  // Tampilkan pesan sendiri langsung
-  tambahPesanChat(namaUser, pesan, penggunaSaatIni.role, new Date().toLocaleTimeString('id-ID'));
-  input.value = '';
-}
-
-function tambahPesanChat(nama, pesan, role, waktu = '') {
-  const area = document.getElementById('area-chat');
-  const div = document.createElement('div');
-  
-  if (nama === 'sistem') {
-    div.style.cssText = 'text-align:center; color:#64748b; font-size:11px; padding:4px;';
-    div.textContent = pesan;
-  } else {
-    div.className = 'buble-chat';
-    div.innerHTML = `
-      <div class="pengirim ${role}">${nama}</div>
-      <div class="isi">${pesan}</div>
-      ${waktu ? `<div class="wkt">${waktu}</div>` : ''}
-    `;
-  }
-  
-  area.appendChild(div);
-  area.scrollTop = area.scrollHeight;
-}
-
-// =====================================================
-// ANGKAT TANGAN
-// =====================================================
-function angkatTangan() {
-  const namaUser = penggunaSaatIni.namaGuru || penggunaSaatIni.nama;
-  socket.emit('angkat-tangan', { ruangId: ruangSaatIni.id, namaUser });
-  
-  const btn = document.querySelector('[onclick="angkatTangan()"]');
-  btn.style.background = '#f59e0b';
-  setTimeout(() => btn.style.background = '#334155', 3000);
-}
-
-// =====================================================
-// PAPAN TULIS
-// =====================================================
-function setupPapanTulis() {
-  const canvas = document.getElementById('papan-canvas');
-  const ctx = canvas.getContext('2d');
-  let sedangGambar = false;
-  let posSebelumnya = null;
-
-  // Ukuran canvas
-  function updateUkuranCanvas() {
-    const parent = canvas.parentElement;
-    canvas.width = parent.clientWidth;
-    canvas.height = parent.clientHeight - 
-      (document.getElementById('toolbar-papan').offsetHeight || 0) - 
-      (document.getElementById('info-papan-siswa').offsetHeight || 0);
-  }
-  updateUkuranCanvas();
-  window.addEventListener('resize', updateUkuranCanvas);
-
-  // Hanya guru yang bisa menggambar
-  if (penggunaSaatIni.role !== 'guru') return;
-
-  function getPosisi(e) {
-    const rect = canvas.getBoundingClientRect();
-    const touch = e.touches ? e.touches[0] : e;
-    return {
-      x: (touch.clientX - rect.left) * (canvas.width / rect.width),
-      y: (touch.clientY - rect.top) * (canvas.height / rect.height)
-    };
-  }
-
-  function gambarGaris(dari, ke, warna, ukuran, hapus) {
-    ctx.beginPath();
-    ctx.moveTo(dari.x, dari.y);
-    ctx.lineTo(ke.x, ke.y);
-    ctx.strokeStyle = hapus ? '#ffffff' : warna;
-    ctx.lineWidth = hapus ? parseInt(ukuran) * 3 : parseInt(ukuran);
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.stroke();
-  }
-
-  canvas.addEventListener('mousedown', (e) => {
-    sedangGambar = true;
-    posSebelumnya = getPosisi(e);
-  });
-
-  canvas.addEventListener('mousemove', (e) => {
-    if (!sedangGambar) return;
-    const posSekarang = getPosisi(e);
-    const warna = document.getElementById('warna-papan').value;
-    const ukuran = document.getElementById('ukuran-kuas').value;
-    const hapus = alatPapan === 'hapus';
-
-    gambarGaris(posSebelumnya, posSekarang, warna, ukuran, hapus);
-
-    // Kirim ke semua via Socket.io
-    socket.emit('papan-tulis-gambar', {
-      ruangId: ruangSaatIni.id,
-      data: { dari: posSebelumnya, ke: posSekarang, warna, ukuran, hapus }
+    canvas.addEventListener('mousedown', () => menggambar = true);
+    canvas.addEventListener('mouseup', () => { menggambar = false; ctx.beginPath(); });
+    canvas.addEventListener('mousemove', (e) => {
+      if (!menggambar) return;
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = warnaAktif;
+      
+      const rect = canvas.getBoundingClientRect();
+      ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
     });
 
-    posSebelumnya = posSekarang;
-  });
+    function gantiWarna(w) { warnaAktif = w; }
+    function hapusPapan() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
-  canvas.addEventListener('mouseup', () => sedangGambar = false);
-  canvas.addEventListener('mouseleave', () => sedangGambar = false);
-
-  // Touch support (tablet/HP)
-  canvas.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    sedangGambar = true;
-    posSebelumnya = getPosisi(e);
-  });
-
-  canvas.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    if (!sedangGambar) return;
-    const posSekarang = getPosisi(e);
-    const warna = document.getElementById('warna-papan').value;
-    const ukuran = document.getElementById('ukuran-kuas').value;
-    const hapus = alatPapan === 'hapus';
-
-    gambarGaris(posSebelumnya, posSekarang, warna, ukuran, hapus);
-    socket.emit('papan-tulis-gambar', {
-      ruangId: ruangSaatIni.id,
-      data: { dari: posSebelumnya, ke: posSekarang, warna, ukuran, hapus }
-    });
-    posSebelumnya = posSekarang;
-  });
-
-  canvas.addEventListener('touchend', () => sedangGambar = false);
-}
-
-function gambarDariRemote(data) {
-  const canvas = document.getElementById('papan-canvas');
-  const ctx = canvas.getContext('2d');
-  ctx.beginPath();
-  ctx.moveTo(data.dari.x, data.dari.y);
-  ctx.lineTo(data.ke.x, data.ke.y);
-  ctx.strokeStyle = data.hapus ? '#ffffff' : data.warna;
-  ctx.lineWidth = data.hapus ? parseInt(data.ukuran) * 3 : parseInt(data.ukuran);
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.stroke();
-}
-
-function gantiAlat(alat) { alatPapan = alat; }
-
-function bersihkanPapan() {
-  if (!confirm('Yakin ingin membersihkan papan tulis?')) return;
-  const canvas = document.getElementById('papan-canvas');
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  socket.emit('papan-tulis-bersihkan', { ruangId: ruangSaatIni.id });
-}
-
-// =====================================================
-// PRESENTASI DOKUMEN (PDF, Gambar, Word, PPT, dll)
-// =====================================================
-let halamanPresentasi = [];
-let halamanSaatIni = 0;
-let namaFilePresentasi = '';
-
-function tampilInfoPresentasi(show) {
-  const el = document.getElementById('info-presentasi');
-  el.style.display = show ? 'inline-flex' : 'none';
-  el.style.alignItems = 'center';
-  el.style.gap = '4px';
-}
-
-function gambarKeCanvas(imageData) {
-  const canvas = document.getElementById('papan-canvas');
-  const ctx = canvas.getContext('2d');
-  const img = new Image();
-  img.onload = () => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
-    const x = (canvas.width - img.width * scale) / 2;
-    const y = (canvas.height - img.height * scale) / 2;
-    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
-  };
-  img.src = imageData;
-}
-
-async function muatPDF(file) {
-  // Load PDF.js
-  if (!window.pdfjsLib) {
-    await new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-      s.onload = resolve; s.onerror = reject;
-      document.head.appendChild(s);
-    });
-    window.pdfjsLib.GlobalWorkerOptions.workerSrc =
-      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  }
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  const offscreen = document.createElement('canvas');
-  const pages = [];
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const viewport = page.getViewport({ scale: 1.8 });
-    offscreen.width = viewport.width;
-    offscreen.height = viewport.height;
-    await page.render({ canvasContext: offscreen.getContext('2d'), viewport }).promise;
-    pages.push(offscreen.toDataURL('image/jpeg', 0.9));
-  }
-  return pages;
-}
-
-async function muatGambar(file) {
-  return new Promise(resolve => {
-    const reader = new FileReader();
-    reader.onload = e => resolve([e.target.result]);
-    reader.readAsDataURL(file);
-  });
-}
-
-async function muatPresentasi(input) {
-  const file = input.files[0];
-  if (!file) return;
-  input.value = '';
-
-  halamanPresentasi = [];
-  halamanSaatIni = 0;
-  namaFilePresentasi = file.name;
-
-  // Tampil loading
-  const canvas = document.getElementById('papan-canvas');
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#f0f0f0';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#555';
-  ctx.font = '20px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('⏳ Memuat ' + file.name + ' ...', canvas.width/2, canvas.height/2);
-
-  try {
-    const tipe = file.type;
-    const nama = file.name.toLowerCase();
-
-    if (tipe === 'application/pdf' || nama.endsWith('.pdf')) {
-      // PDF - render semua halaman
-      halamanPresentasi = await muatPDF(file);
-
-    } else if (tipe.startsWith('image/') || nama.match(/\.(png|jpg|jpeg|gif|webp|bmp|svg)$/)) {
-      // Gambar langsung
-      halamanPresentasi = await muatGambar(file);
-
-    } else if (nama.match(/\.(ppt|pptx|doc|docx|xls|xlsx|odt|odp|ods)$/)) {
-      // Office files - tampilkan pesan dan link download
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        // Buat gambar placeholder dengan nama file
-        const offscreen = document.createElement('canvas');
-        offscreen.width = 1280;
-        offscreen.height = 720;
-        const c = offscreen.getContext('2d');
-        c.fillStyle = '#1a1a2e';
-        c.fillRect(0, 0, 1280, 720);
-        c.fillStyle = '#6C3CE1';
-        c.fillRect(0, 0, 1280, 8);
-        c.fillStyle = 'white';
-        c.font = 'bold 48px sans-serif';
-        c.textAlign = 'center';
-        // Ikon file
-        const ext = nama.split('.').pop().toUpperCase();
-        c.fillStyle = '#6C3CE1';
-        c.fillRect(490, 200, 300, 220);
-        c.fillStyle = 'white';
-        c.font = 'bold 64px sans-serif';
-        c.fillText(ext, 640, 350);
-        c.fillStyle = 'white';
-        c.font = 'bold 36px sans-serif';
-        c.fillText(file.name, 640, 500);
-        c.font = '24px sans-serif';
-        c.fillStyle = '#aaa';
-        c.fillText('📎 File sedang dipresentasikan oleh guru', 640, 560);
-        halamanPresentasi = [offscreen.toDataURL('image/jpeg', 0.9)];
-        tampilHalamanPresentasi(0);
-      };
-      reader.readAsArrayBuffer(file);
-      return;
-
-    } else {
-      // File lain - tampilkan nama file saja
-      const offscreen = document.createElement('canvas');
-      offscreen.width = 1280;
-      offscreen.height = 720;
-      const c = offscreen.getContext('2d');
-      c.fillStyle = '#1a1a2e';
-      c.fillRect(0, 0, 1280, 720);
-      c.fillStyle = 'white';
-      c.font = 'bold 40px sans-serif';
-      c.textAlign = 'center';
-      c.fillText('📄 ' + file.name, 640, 340);
-      c.font = '24px sans-serif';
-      c.fillStyle = '#aaa';
-      c.fillText('File sedang dipresentasikan', 640, 400);
-      halamanPresentasi = [offscreen.toDataURL('image/jpeg', 0.9)];
+    // INTEGRASI TUGAS
+    function postTugas() {
+      const soal = document.getElementById('teks-tugas').value;
+      if(!soal) return alert("Tulis soal dulu!");
+      alert("Tugas berhasil dikirim ke layar siswa!");
+      document.getElementById('teks-tugas').value = "";
     }
 
-    if (halamanPresentasi.length === 0) {
-      tampilNotif('❌ Gagal memuat file');
-      return;
+    function kirimChat() {
+      const msg = document.getElementById('input-chat').value;
+      if(!msg) return;
+      const box = document.getElementById('box-chat');
+      box.innerHTML += `<div><b>Anda:</b> ${msg}</div>`;
+      document.getElementById('input-chat').value = "";
+      box.scrollTop = box.scrollHeight;
     }
 
-    tampilInfoPresentasi(true);
-    tampilHalamanPresentasi(0);
-
-  } catch(err) {
-    console.error(err);
-    tampilNotif('❌ Gagal memuat file: ' + err.message);
-  }
-}
-
-function tampilHalamanPresentasi(idx) {
-  if (idx < 0 || idx >= halamanPresentasi.length) return;
-  halamanSaatIni = idx;
-  const imageData = halamanPresentasi[idx];
-
-  gambarKeCanvas(imageData);
-  document.getElementById('teks-halaman').textContent = (idx+1) + '/' + halamanPresentasi.length;
-
-  // Broadcast ke semua peserta
-  socket.emit('presentasi-halaman', {
-    ruangId: ruangSaatIni.id,
-    imageData,
-    halaman: idx + 1,
-    totalHalaman: halamanPresentasi.length,
-    namaFile: namaFilePresentasi
-  });
-}
-
-function navigasiHalaman(arah) {
-  tampilHalamanPresentasi(halamanSaatIni + arah);
-}
-
-function akhiriPresentasi() {
-  halamanPresentasi = [];
-  halamanSaatIni = 0;
-  tampilInfoPresentasi(false);
-  const canvas = document.getElementById('papan-canvas');
-  canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-  socket.emit('presentasi-selesai', { ruangId: ruangSaatIni.id });
-  socket.emit('papan-tulis-bersihkan', { ruangId: ruangSaatIni.id });
-}
-
-// (socket presentasi dipindah ke dalam hubungkanSocket())
-
-// =====================================================
-// TUGAS
-// =====================================================
-function tampilTugasBaru(tugas) {
-  const container = document.getElementById('konten-tugas');
-  const sudahAda = document.getElementById(`tugas-${tugas.id}`);
-  if (sudahAda) return;
-
-  const div = document.createElement('div');
-  div.className = 'kartu-tugas';
-  div.id = `tugas-${tugas.id}`;
-
-  const sudahDijawab = localStorage.getItem(`jawab-${tugas.id}`);
-
-  div.innerHTML = `
-    <div class="judul-tugas">📝 ${tugas.judul}</div>
-    <div style="font-size:12px; color:var(--abu); margin-bottom:10px;">
-      Dari: ${tugas.namaGuru} • ${new Date(tugas.dibuatPada).toLocaleTimeString('id-ID')}
-    </div>
-    <div class="soal-tugas">❓ ${tugas.soal}</div>
-    ${penggunaSaatIni.role === 'siswa' ? `
-      ${sudahDijawab ? `
-        <div class="sudah-dijawab">✅ Jawaban kamu sudah terkirim: <em>${sudahDijawab}</em></div>
-      ` : `
-        <textarea id="jawaban-${tugas.id}" placeholder="Tulis jawabanmu di sini..."></textarea>
-        <button class="btn btn-hijau" style="margin-top:8px;" onclick="kirimJawaban('${tugas.id}', '${tugas.judul}')">
-          ✅ Kirim Jawaban
-        </button>
-      `}
-    ` : `
-      <p style="font-size:13px; color:var(--abu);">Menunggu jawaban dari siswa... (refresh untuk update)</p>
-    `}
-  `;
-
-  // Bersihkan placeholder kosong
-  if (container.querySelector('p')) container.innerHTML = '';
-  container.appendChild(div);
-}
-
-async function kirimJawaban(tugasId, judulTugas) {
-  const jawaban = document.getElementById(`jawaban-${tugasId}`).value.trim();
-  if (!jawaban) return alert('Jawaban tidak boleh kosong!');
-
-  const resp = await fetch('/api/tugas/jawab', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      tugasId,
-      siswaId: penggunaSaatIni.id,
-      namaSiswa: penggunaSaatIni.nama,
-      jawaban
-    })
-  });
-
-  const hasil = await resp.json();
-  if (hasil.sukses) {
-    localStorage.setItem(`jawab-${tugasId}`, jawaban);
-    const div = document.getElementById(`tugas-${tugasId}`);
-    const area = div.querySelector('textarea');
-    const btn = div.querySelector('button');
-    if (area) area.replaceWith(Object.assign(document.createElement('div'), {
-      className: 'sudah-dijawab',
-      innerHTML: `✅ Jawaban terkirim: <em>${jawaban}</em>`
-    }));
-    if (btn) btn.remove();
-  }
-}
-
-// =====================================================
-// NAVIGASI
-// =====================================================
-function tampilNotif(pesan) {
-  const el = document.getElementById('notif-tangan');
-  el.textContent = pesan;
-  el.style.display = 'block';
-  setTimeout(() => el.style.display = 'none', 3000);
-}
-
-function gantiPanel(nama, el) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('tampil'));
-  document.getElementById(`panel-${nama}`).classList.add('tampil');
-  document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('aktif'));
-  el.classList.add('aktif');
-
-  if (nama === 'tugas') document.getElementById('badge-tugas').style.display = 'none';
-}
-
-function keluarRuang() {
-  if (confirm('Yakin ingin keluar dari ruang kelas?')) {
-    if (streamLokal) streamLokal.getTracks().forEach(t => t.stop());
-    window.close();
-    window.location.href = penggunaSaatIni.role === 'guru' ? '/guru' : '/siswa';
-  }
-}
-
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(console.error);
-}
-</script>
+    function keluar() {
+      if(confirm("Akhiri sesi kelas?")) {
+        if(streamLokal) streamLokal.getTracks().forEach(t => t.stop());
+        window.location.href = '/guru-dashboard.html';
+      }
+    }
+  </script>
 </body>
 </html>
