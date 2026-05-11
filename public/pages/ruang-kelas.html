@@ -164,7 +164,7 @@
     .btn-kontrol.abu { background: #334155; color: white; }
 
     /* ---- PANEL PAPAN TULIS ---- */
-    #panel-papan { background: white; flex-direction: column; }
+    #panel-papan { background: #e5e7eb; flex-direction: column; }
     .toolbar-papan {
       display: flex;
       gap: 8px;
@@ -174,7 +174,9 @@
       flex-wrap: wrap;
     }
     .toolbar-papan label { font-size: 12px; color: #666; align-self: center; }
-    #papan-canvas { flex: 1; cursor: crosshair; touch-action: none; }
+    #papan-canvas { cursor: crosshair; touch-action: none; background: white; }
+    #papan-canvas.mode-teks { cursor: text; }
+    #papan-canvas.mode-zoom { cursor: zoom-in; }
     .siswa-papan-info { padding: 10px 16px; background: #dbeafe; font-size: 13px; color: #1e40af; display: none; }
 
     /* ---- PANEL TUGAS ---- */
@@ -441,7 +443,8 @@
     <!-- Panel Papan Tulis -->
     <div class="panel" id="panel-papan">
       <div class="siswa-papan-info" id="info-papan-siswa">
-        Kamu hanya bisa melihat papan tulis. Hanya guru yang bisa menggambar.
+        👁️ Mode lihat saja &mdash; hanya guru yang bisa menggambar &amp; menulis.
+        <span style="margin-left:12px;">Zoom: <button class="btn btn-kecil btn-abu" style="padding:2px 8px;" onclick="zoomPapan(-0.2)">−</button> <span id="label-zoom-siswa" style="font-size:11px;">100%</span> <button class="btn btn-kecil btn-abu" style="padding:2px 8px;" onclick="zoomPapan(0.2)">+</button></span>
       </div>
       <div class="toolbar-papan" id="toolbar-papan">
         <label>Warna:</label>
@@ -456,10 +459,24 @@
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
           Hapus
         </button>
+        <button class="btn btn-kecil btn-abu" onclick="gantiAlat('teks')" id="btn-alat-teks" title="Ketik teks di papan tulis">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+          Teks
+        </button>
         <button class="btn btn-kecil btn-merah" onclick="bersihkanPapan()">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
           Bersihkan
         </button>
+        <span style="display:flex;align-items:center;gap:4px;margin-left:4px;">
+          <button class="btn btn-kecil btn-abu" onclick="zoomPapan(-0.2)" title="Zoom out">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          </button>
+          <span id="label-zoom" style="font-size:11px;color:#555;min-width:36px;text-align:center;">100%</span>
+          <button class="btn btn-kecil btn-abu" onclick="zoomPapan(0.2)" title="Zoom in">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          </button>
+          <button class="btn btn-kecil btn-abu" onclick="resetZoomPapan()" title="Reset zoom">Reset</button>
+        </span>
         <label class="btn btn-kecil" style="background:#6C3CE1;color:white;cursor:pointer;" title="Upload file untuk Presentasi (PDF, Gambar, Word, PPT)">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           Presentasi
@@ -470,9 +487,22 @@
           <span id="teks-halaman">1/1</span>
           <button class="btn btn-kecil btn-abu" onclick="navigasiHalaman(1)">&#8594;</button>
           <button class="btn btn-kecil btn-merah" onclick="akhiriPresentasi()" style="margin-left:4px;">Stop</button>
+          <span style="display:inline-flex;align-items:center;gap:3px;margin-left:6px;border-left:1px solid #d1d5db;padding-left:6px;">
+            <button class="btn btn-kecil btn-abu" onclick="zoomPapan(-0.2)" title="Zoom out presentasi">−</button>
+            <span id="label-zoom-pres" style="font-size:11px;color:#555;min-width:34px;text-align:center;">100%</span>
+            <button class="btn btn-kecil btn-abu" onclick="zoomPapan(0.2)" title="Zoom in presentasi">+</button>
+            <button class="btn btn-kecil btn-abu" onclick="resetZoomPapan()" title="Reset zoom">⊙</button>
+          </span>
         </span>
       </div>
-      <canvas id="papan-canvas"></canvas>
+      <div id="papan-zoom-wrapper" style="flex:1;overflow:auto;position:relative;background:#fff;">
+        <div id="papan-zoom-inner" style="position:relative;transform-origin:top left;display:inline-block;">
+          <canvas id="papan-canvas" style="display:block;"></canvas>
+          <input type="text" id="input-teks-papan" placeholder="Ketik teks, Enter untuk tempel..."
+            style="display:none;position:absolute;z-index:20;border:2px dashed #3b82f6;background:rgba(255,255,255,0.92);
+            padding:4px 8px;font-size:16px;border-radius:4px;min-width:140px;outline:none;box-shadow:0 2px 8px rgba(0,0,0,0.15);" />
+        </div>
+      </div>
     </div>
 
     <!-- Panel Tugas -->
@@ -697,6 +727,10 @@ function hubungkanSocket() {
     const canvas = document.getElementById('papan-canvas');
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+  });
+
+  socket.on('papan-tulis-teks', (data) => {
+    teksFromRemote(data);
   });
 
   // ---- Presentasi dari Guru ----
@@ -928,6 +962,33 @@ function angkatTangan() {
 }
 
 // =====================================================
+// ZOOM PAPAN TULIS
+// =====================================================
+let zoomLevel = 1.0;
+
+function zoomPapan(delta) {
+  zoomLevel = Math.min(4, Math.max(0.3, zoomLevel + delta));
+  terapkanZoom();
+}
+
+function resetZoomPapan() {
+  zoomLevel = 1.0;
+  terapkanZoom();
+}
+
+function terapkanZoom() {
+  const inner = document.getElementById('papan-zoom-inner');
+  if (inner) inner.style.transform = `scale(${zoomLevel})`;
+  const persen = Math.round(zoomLevel * 100) + '%';
+  const label = document.getElementById('label-zoom');
+  if (label) label.textContent = persen;
+  const labelPres = document.getElementById('label-zoom-pres');
+  if (labelPres) labelPres.textContent = persen;
+  const labelSiswa = document.getElementById('label-zoom-siswa');
+  if (labelSiswa) labelSiswa.textContent = persen;
+}
+
+// =====================================================
 // PAPAN TULIS
 // =====================================================
 function setupPapanTulis() {
@@ -936,22 +997,81 @@ function setupPapanTulis() {
   let sedangGambar = false;
   let posSebelumnya = null;
 
-  // Ukuran canvas
+  // Ukuran canvas berdasarkan wrapper
   function updateUkuranCanvas() {
-    const parent = canvas.parentElement;
-    // Hanya update jika panel sedang tampil (clientWidth > 0)
-    if (parent.clientWidth === 0) return;
-    canvas.width = parent.clientWidth;
-    canvas.height = parent.clientHeight - 
-      (document.getElementById('toolbar-papan').offsetHeight || 0) - 
-      (document.getElementById('info-papan-siswa').offsetHeight || 0);
+    const wrapper = document.getElementById('papan-zoom-wrapper');
+    if (!wrapper || wrapper.clientWidth === 0) return;
+    // Simpan konten lama
+    const imgData = ctx.getImageData(0, 0, canvas.width || 1, canvas.height || 1);
+    canvas.width = Math.max(wrapper.clientWidth, 1280);
+    canvas.height = Math.max(wrapper.clientHeight, 720);
+    try { ctx.putImageData(imgData, 0, 0); } catch(e) {}
   }
   updateUkuranCanvas();
   window.addEventListener('resize', updateUkuranCanvas);
 
-  // Hanya guru yang bisa menggambar
+  // Hanya guru yang bisa menggambar/menulis
   if (penggunaSaatIni.role !== 'guru') return;
 
+  // --- Input teks ---
+  const inputTeks = document.getElementById('input-teks-papan');
+  let teksPosX = 0, teksPosY = 0;
+
+  function tampilInputTeks(x, y) {
+    // Posisi dalam canvas (koordinat logical)
+    teksPosX = x; teksPosY = y;
+    // Posisi di dalam inner div (scaling sudah di transform, pakai koordinat canvas)
+    inputTeks.style.left = x + 'px';
+    inputTeks.style.top = (y - 24) + 'px';
+    inputTeks.style.fontSize = (16 / zoomLevel * 1) + 'px';
+    inputTeks.style.display = 'block';
+    inputTeks.value = '';
+    inputTeks.focus();
+  }
+
+  function sembunyikanInputTeks() {
+    inputTeks.style.display = 'none';
+    inputTeks.value = '';
+  }
+
+  inputTeks.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const teks = inputTeks.value.trim();
+      if (teks) {
+        const warna = document.getElementById('warna-papan').value;
+        const ukuran = parseInt(document.getElementById('ukuran-kuas').value);
+        const ukuranFont = Math.max(14, ukuran * 3);
+        tuliskanTeksKeCanvas(ctx, teksPosX, teksPosY, teks, warna, ukuranFont);
+        // Broadcast
+        socket.emit('papan-tulis-teks', {
+          ruangId: ruangSaatIni.id,
+          data: { x: teksPosX, y: teksPosY, teks, warna, ukuranFont }
+        });
+      }
+      sembunyikanInputTeks();
+    } else if (e.key === 'Escape') {
+      sembunyikanInputTeks();
+    }
+  });
+
+  inputTeks.addEventListener('blur', () => {
+    // Tempel teks jika ada isi ketika klik di luar
+    const teks = inputTeks.value.trim();
+    if (teks) {
+      const warna = document.getElementById('warna-papan').value;
+      const ukuran = parseInt(document.getElementById('ukuran-kuas').value);
+      const ukuranFont = Math.max(14, ukuran * 3);
+      tuliskanTeksKeCanvas(ctx, teksPosX, teksPosY, teks, warna, ukuranFont);
+      socket.emit('papan-tulis-teks', {
+        ruangId: ruangSaatIni.id,
+        data: { x: teksPosX, y: teksPosY, teks, warna, ukuranFont }
+      });
+    }
+    sembunyikanInputTeks();
+  });
+
+  // --- Posisi kursor di canvas (memperhitungkan zoom) ---
   function getPosisi(e) {
     const rect = canvas.getBoundingClientRect();
     const touch = e.touches ? e.touches[0] : e;
@@ -973,11 +1093,17 @@ function setupPapanTulis() {
   }
 
   canvas.addEventListener('mousedown', (e) => {
+    if (alatPapan === 'teks') {
+      const pos = getPosisi(e);
+      tampilInputTeks(pos.x, pos.y);
+      return;
+    }
     sedangGambar = true;
     posSebelumnya = getPosisi(e);
   });
 
   canvas.addEventListener('mousemove', (e) => {
+    if (alatPapan === 'teks') return;
     if (!sedangGambar) return;
     const posSekarang = getPosisi(e);
     const warna = document.getElementById('warna-papan').value;
@@ -985,28 +1111,31 @@ function setupPapanTulis() {
     const hapus = alatPapan === 'hapus';
 
     gambarGaris(posSebelumnya, posSekarang, warna, ukuran, hapus);
-
-    // Kirim ke semua via Socket.io
     socket.emit('papan-tulis-gambar', {
       ruangId: ruangSaatIni.id,
       data: { dari: posSebelumnya, ke: posSekarang, warna, ukuran, hapus }
     });
-
     posSebelumnya = posSekarang;
   });
 
   canvas.addEventListener('mouseup', () => sedangGambar = false);
   canvas.addEventListener('mouseleave', () => sedangGambar = false);
 
-  // Touch support (tablet/HP)
+  // Touch support
   canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
+    if (alatPapan === 'teks') {
+      const pos = getPosisi(e);
+      tampilInputTeks(pos.x, pos.y);
+      return;
+    }
     sedangGambar = true;
     posSebelumnya = getPosisi(e);
   });
 
   canvas.addEventListener('touchmove', (e) => {
     e.preventDefault();
+    if (alatPapan === 'teks') return;
     if (!sedangGambar) return;
     const posSekarang = getPosisi(e);
     const warna = document.getElementById('warna-papan').value;
@@ -1022,6 +1151,33 @@ function setupPapanTulis() {
   });
 
   canvas.addEventListener('touchend', () => sedangGambar = false);
+
+  // Scroll-to-zoom dengan Ctrl + scroll
+  document.getElementById('papan-zoom-wrapper').addEventListener('wheel', (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      zoomPapan(e.deltaY < 0 ? 0.1 : -0.1);
+    }
+  }, { passive: false });
+}
+
+// Ctrl+scroll untuk siswa (di luar setupPapanTulis)
+document.addEventListener('DOMContentLoaded', () => {
+  const wrapper = document.getElementById('papan-zoom-wrapper');
+  if (wrapper) {
+    wrapper.addEventListener('wheel', (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        zoomPapan(e.deltaY < 0 ? 0.1 : -0.1);
+      }
+    }, { passive: false });
+  }
+});
+
+function tuliskanTeksKeCanvas(ctx, x, y, teks, warna, ukuranFont) {
+  ctx.font = `bold ${ukuranFont}px sans-serif`;
+  ctx.fillStyle = warna;
+  ctx.fillText(teks, x, y);
 }
 
 function gambarDariRemote(data) {
@@ -1037,7 +1193,22 @@ function gambarDariRemote(data) {
   ctx.stroke();
 }
 
-function gantiAlat(alat) { alatPapan = alat; }
+function teksFromRemote(data) {
+  const canvas = document.getElementById('papan-canvas');
+  const ctx = canvas.getContext('2d');
+  tuliskanTeksKeCanvas(ctx, data.x, data.y, data.teks, data.warna, data.ukuranFont);
+}
+
+function gantiAlat(alat) {
+  alatPapan = alat;
+  const canvas = document.getElementById('papan-canvas');
+  canvas.className = alat === 'teks' ? 'mode-teks' : (alat === 'hapus' ? '' : '');
+  // Sembunyikan input teks jika ganti alat lain
+  if (alat !== 'teks') {
+    const inp = document.getElementById('input-teks-papan');
+    if (inp) inp.style.display = 'none';
+  }
+}
 
 function bersihkanPapan() {
   if (!confirm('Yakin ingin membersihkan papan tulis?')) return;
@@ -1341,11 +1512,11 @@ function gantiPanel(nama, el) {
   if (nama === 'papan') {
     setTimeout(() => {
       const canvas = document.getElementById('papan-canvas');
-      const parent = canvas.parentElement;
-      canvas.width = parent.clientWidth;
-      canvas.height = parent.clientHeight
-        - (document.getElementById('toolbar-papan').offsetHeight || 0)
-        - (document.getElementById('info-papan-siswa').offsetHeight || 0);
+      const wrapper = document.getElementById('papan-zoom-wrapper');
+      const toolbar = document.getElementById('toolbar-papan');
+      const info = document.getElementById('info-papan-siswa');
+      canvas.width = wrapper.clientWidth;
+      canvas.height = wrapper.clientHeight;
     }, 50);
   }
 }
