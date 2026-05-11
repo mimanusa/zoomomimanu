@@ -109,7 +109,7 @@
     }
     .stat-kartu .stat-label { font-size: 12px; color: var(--abu); font-weight: 700; }
 
-    /* Masuk Kelas */
+    /* Container Kartu */
     .section-kartu {
       background: white;
       border-radius: 20px;
@@ -135,12 +135,6 @@
       font-size: 16px;
     }
 
-    .kode-input-row {
-      display: flex;
-      gap: 12px;
-    }
-    .kode-input-row .input-field { flex: 1; }
-
     .kartu-ruang-tersedia {
       display: flex;
       align-items: center;
@@ -157,7 +151,6 @@
     .kartu-ruang-tersedia .kode {
       font-size: 20px;
       font-weight: 900;
-      font-family: monospace;
       color: var(--primary);
       letter-spacing: 0.04em;
     }
@@ -173,41 +166,12 @@
       transition: all 0.2s;
     }
     .tugas-item:hover { border-color: #FCD34D; }
-    .tugas-item .tugas-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     .tugas-item h4 { font-size: 14px; font-weight: 800; color: #92400E; }
     .tugas-item .soal { font-size: 14px; color: var(--teks); margin-bottom: 14px; line-height: 1.6; font-weight: 600; }
-    .area-jawaban { display: flex; gap: 10px; }
-    .area-jawaban textarea {
-      flex: 1;
-      padding: 12px 14px;
-      border: 2px solid #E2E8F0;
-      border-radius: 10px;
-      font-size: 13px;
-      font-family: 'Nunito', sans-serif;
-      font-weight: 600;
-      resize: vertical;
-      outline: none;
-      transition: all 0.2s;
-      min-height: 80px;
-    }
-    .area-jawaban textarea:focus { border-color: var(--secondary); }
-    .sudah-dijawab {
-      background: var(--hijau-muda);
-      border-radius: 10px;
-      padding: 12px 16px;
-      font-size: 13px;
-      font-weight: 700;
-      color: #065F46;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 10px;
-    }
 
     @media (max-width: 600px) {
       .stats-row { grid-template-columns: 1fr 1fr; }
       .banner-hero { flex-direction: column; text-align: center; }
-      .kode-input-row { flex-direction: column; }
     }
   </style>
 </head>
@@ -302,7 +266,6 @@
 
   <script>
     let penggunaSaatIni = null;
-    const tugasDijawab = new Set();
 
     window.onload = function() {
       const data = localStorage.getItem('penggunaSaatIni');
@@ -315,51 +278,40 @@
       document.getElementById('kelas-siswa-info').textContent = penggunaSaatIni.kelas;
 
       muatRuang();
-      // Auto-refresh setiap 10 detik agar ruang aktif langsung muncul
       setInterval(muatRuang, 10000);
     };
 
     async function muatRuang() {
-      const resp = await fetch(`/api/ruang/aktif/${penggunaSaatIni.kelas}`);
-      const hasil = await resp.json();
-      const container = document.getElementById('daftar-ruang-siswa');
-      const ruangList = hasil.data || [];
+      try {
+        const resp = await fetch(`/api/ruang/aktif/${penggunaSaatIni.kelas}`);
+        const hasil = await resp.json();
+        const container = document.getElementById('daftar-ruang-siswa');
+        const ruangList = hasil.data || [];
 
-      document.getElementById('stat-ruang').textContent = ruangList.length;
+        document.getElementById('stat-ruang').textContent = ruangList.length;
 
-      if (ruangList.length === 0) {
-        container.innerHTML = `
-          <div style="text-align:center; padding:30px 20px; color:var(--abu);">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 12px;display:block;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <div style="font-weight:700;">Belum ada ruang kelas aktif</div>
-            <div style="font-size:12px; margin-top:6px;">Tunggu gurumu membuat ruang kelas</div>
-          </div>`;
-        return;
-      }
+        if (ruangList.length === 0) {
+          container.innerHTML = `
+            <div style="text-align:center; padding:30px 20px; color:var(--abu);">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 12px;display:block;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <div style="font-weight:700;">Belum ada ruang kelas aktif</div>
+              <div style="font-size:12px; margin-top:6px;">Tunggu gurumu membuka ruang kelas</div>
+            </div>`;
+          return;
+        }
 
-      container.innerHTML = ruangList.map(r => `
-        <div class="kartu-ruang-tersedia" onclick="masukRuang('${r.id}', '${r.kode}', '${r.judul}')">
-          <div>
-            <div class="kode">${r.judul}</div>
-            <div class="detail">👨‍🏫 ${r.namaGuru} · Dibuka ${new Date(r.dibuatPada).toLocaleTimeString('id-ID')}</div>
+        container.innerHTML = ruangList.map(r => `
+          <div class="kartu-ruang-tersedia" onclick="masukRuang('${r.id}', '${r.kode}', '${r.judul}')">
+            <div>
+              <div class="kode">${r.judul}</div>
+              <div class="detail">👨‍🏫 ${r.namaGuru} · Dibuka ${new Date(r.dibuatPada).toLocaleTimeString('id-ID')}</div>
+            </div>
+            <button class="btn btn-utama btn-kecil">Masuk →</button>
           </div>
-          <button class="btn btn-utama btn-kecil">Masuk →</button>
-        </div>
-      `).join('');
-    }
-
-    function masukDenganKode() {
-      const kode = document.getElementById('kode-input').value.trim().toUpperCase();
-      if (!kode) return tampilNotif('❌ Masukkan kode ruang!');
-      masukRuangDenganKode(kode);
-    }
-
-    async function masukRuangDenganKode(kode) {
-      const resp = await fetch(`/api/ruang/aktif/${penggunaSaatIni.kelas}`);
-      const hasil = await resp.json();
-      const ruang = (hasil.data || []).find(r => r.kode === kode);
-      if (!ruang) return tampilNotif('❌ Kode ruang tidak ditemukan!');
-      masukRuang(ruang.id, ruang.kode, ruang.judul);
+        `).join('');
+      } catch (err) {
+        console.error("Gagal memuat ruang:", err);
+      }
     }
 
     function masukRuang(id, kode, judul) {
@@ -378,8 +330,6 @@
       localStorage.removeItem('penggunaSaatIni');
       window.location.href = '/';
     }
-
-    setInterval(muatRuang, 15000);
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(console.error);
