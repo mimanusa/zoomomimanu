@@ -8,7 +8,7 @@
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0F172A">
   <style>
-    .layout-dashboard {
+    .layout-pusat {
       display: flex;
       justify-content: center;
       align-items: center;
@@ -16,66 +16,65 @@
       background: #0F172A;
       padding: 20px;
     }
-    .card-pusat {
-      background: linear-gradient(145deg, #1E293B, #0F172A);
+    .card-utama {
+      background: #1E293B;
       padding: 40px;
       border-radius: 24px;
       text-align: center;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-      max-width: 500px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+      max-width: 450px;
       width: 100%;
-      border: 1px solid rgba(255,255,255,0.1);
+      border: 1px solid #334155;
     }
-    .avatar-guru {
-      width: 100px; height: 100px;
-      background: linear-gradient(135deg, #6C3CE1, #00C896);
-      border-radius: 30px;
+    .icon-box {
+      width: 80px; height: 80px;
+      background: linear-gradient(135deg, #6366F1, #22C55E);
+      border-radius: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 45px;
+      font-size: 40px;
       margin: 0 auto 20px;
-      box-shadow: 0 10px 30px rgba(108,60,225,0.4);
     }
-    h2 { color: white; margin-bottom: 10px; font-family: 'Sora', sans-serif; }
-    p { color: rgba(255,255,255,0.6); margin-bottom: 30px; line-height: 1.6; }
-    .btn-masuk {
+    h2 { color: white; margin-bottom: 8px; font-family: sans-serif; }
+    p { color: #94A3B8; margin-bottom: 30px; line-height: 1.5; }
+    .btn-masuk-langsung {
       width: 100%;
-      padding: 18px;
+      padding: 16px;
       border: none;
-      border-radius: 15px;
-      background: linear-gradient(135deg, #6C3CE1, #00C896);
+      border-radius: 12px;
+      background: #6366F1;
       color: white;
-      font-weight: 800;
-      font-size: 18px;
+      font-weight: bold;
+      font-size: 16px;
       cursor: pointer;
-      transition: all 0.3s;
+      transition: 0.2s;
     }
-    .btn-masuk:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); opacity: 0.9; }
+    .btn-masuk-langsung:hover { background: #4F46E5; transform: translateY(-2px); }
   </style>
 </head>
 <body>
 
-  <div class="layout-dashboard">
-    <div class="card-pusat">
-      <div class="avatar-guru">👩‍🏫</div>
-      <h2 id="salam-guru">Halo, Guru!</h2>
-      <p>Ruang kelas sudah siap. Klik tombol di bawah untuk mulai mengajar dan berinteraksi dengan siswa.</p>
-      <button class="btn-masuk" onclick="langsungMasuk()">🚀 Mulai Masuk Kelas</button>
+  <div class="layout-pusat">
+    <div class="card-utama">
+      <div class="icon-box">👨‍🏫</div>
+      <h2 id="salam">Selamat Datang</h2>
+      <p>Akses langsung ke ruang kelas Anda tanpa perlu membuat ulang ruangan. Klik tombol di bawah untuk memulai.</p>
+      <button class="btn-masuk-langsung" onclick="aksesKelas()">🚀 Masuk ke Kelas</button>
     </div>
   </div>
 
   <script>
-    const dataUser = localStorage.getItem('penggunaSaatIni');
-    if (dataUser) {
-      const user = JSON.parse(dataUser);
-      document.getElementById('salam-guru').textContent = `Halo, ${user.namaGuru || 'Guru'}!`;
+    const data = localStorage.getItem('penggunaSaatIni');
+    if (data) {
+      const user = JSON.parse(data);
+      document.getElementById('salam').textContent = `Halo, ${user.nama || 'Guru'}!`;
     }
 
-    function langsungMasuk() {
-      // Menentukan kode ruang otomatis agar tidak perlu input lagi
-      const ruangDefault = { kode: "KELAS-UTAMA", aktif: true };
-      localStorage.setItem('ruangSaatIni', JSON.stringify(ruangDefault));
+    function aksesKelas() {
+      // Langsung tentukan ruang utama
+      const infoRuang = { id: "KELAS-UTAMA", status: "aktif" };
+      localStorage.setItem('ruangAktif', JSON.stringify(infoRuang));
       window.location.href = '/ruang-kelas.html';
     }
   </script>
