@@ -734,7 +734,14 @@ function toggleCam() {
 // SOCKET.IO
 // =====================================================
 function hubungkanSocket() {
-  socket = io();
+  socket = io({
+    // Naikkan timeout agar tidak disconnect saat emit besar (presentasi)
+    ackTimeout: 15000,
+    retries: 3,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    timeout: 20000
+  });
   const namaUser = penggunaSaatIni.namaGuru || penggunaSaatIni.nama;
   const role = penggunaSaatIni.role;
 
@@ -817,6 +824,34 @@ function hubungkanSocket() {
       el.style.display = 'block';
       setTimeout(() => el.style.display = 'none', 4000);
     }
+  });
+
+  // ---- AUTO REJOIN setelah reconnect ----
+  // Jika socket sempat putus (misal saat emit presentasi besar),
+  // otomatis rejoin ruang tanpa perlu refresh halaman
+  socket.on('connect', () => {
+    if (ruangSaatIni && penggunaSaatIni) {
+      const namaUser = penggunaSaatIni.namaGuru || penggunaSaatIni.nama;
+      socket.emit('bergabung-ruang', {
+        ruangId: ruangSaatIni.id,
+        userId: penggunaSaatIni.id,
+        namaUser,
+        role: penggunaSaatIni.role
+      });
+      tampilNotif('🔄 Terhubung kembali ke ruang');
+    }
+  });
+
+  socket.on('disconnect', (reason) => {
+    console.warn('Socket disconnect:', reason);
+    // Jangan tampilkan notif jika ini adalah disconnect yang disengaja
+    if (reason !== 'io client disconnect') {
+      tampilNotif('⚠️ Koneksi terputus, mencoba kembali...');
+    }
+  });
+
+  socket.on('connect_error', (err) => {
+    console.warn('Socket connect_error:', err.message);
   });
 }
 
@@ -1406,11 +1441,11 @@ async function muatPDF(file) {
   const pages = [];
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
-    const viewport = page.getViewport({ scale: 1.8 });
+    const viewport = page.getViewport({ scale: 1.4 }); // Turunkan dari 1.8 agar ukuran file kecil
     offscreen.width = viewport.width;
     offscreen.height = viewport.height;
     await page.render({ canvasContext: offscreen.getContext('2d'), viewport }).promise;
-    pages.push(offscreen.toDataURL('image/jpeg', 0.9));
+    pages.push(offscreen.toDataURL('image/jpeg', 0.80)); // Turunkan kualitas agar ukuran kecil
   }
   return pages;
 }
@@ -1617,21 +1652,58 @@ async function muatPresentasi(input) {
   }
 }
 
-function tampilHalamanPresentasi(idx) {
+// Kompres imageData ke ukuran kecil sebelum dikirim via socket
+// agar tidak menyebabkan socket timeout / user disconnect
+function kompresUntukSocket(imageData) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const offscreen = document.createElement('canvas');
+      // Batasi max 960x540 untuk socket
+      const MAX_W = 960, MAX_H = 540;
+      const ratio = Math.min(MAX_W / img.width, MAX_H / img.height, 1);
+      offscreen.width  = Math.round(img.width  * ratio);
+      offscreen.height = Math.round(img.height * ratio);
+      offscreen.getContext('2d').drawImage(img, 0, 0, offscreen.width, offscreen.height);
+      // JPEG kualitas 0.65
+      resolve(offscreen.toDataURL('image/jpeg', 0.65));
+    };
+    img.onerror = () => resolve(imageData);
+    img.src = imageData;
+  });
+}
+
+let _emiSedangBerjalan = false;
+async function tampilHalamanPresentasi(idx) {
   if (idx < 0 || idx >= halamanPresentasi.length) return;
   halamanSaatIni = idx;
   const imageData = halamanPresentasi[idx];
 
+  // Tampilkan lokal dulu (full resolusi)
   gambarKeCanvas(imageData);
   document.getElementById('teks-halaman').textContent = (idx + 1) + '/' + halamanPresentasi.length;
 
-  socket.emit('presentasi-halaman', {
-    ruangId: ruangSaatIni.id,
-    imageData,
-    halaman: idx + 1,
-    totalHalaman: halamanPresentasi.length,
-    namaFile: namaFilePresentasi
-  });
+  // Hindari emit ganda yang tumpuk
+  if (_emiSedangBerjalan) return;
+  _emiSedangBerjalan = true;
+
+  try {
+    const imageKecil = await kompresUntukSocket(imageData);
+    // Gunakan ack timeout agar socket tidak crash jika server lambat
+    socket.timeout(8000).emit('presentasi-halaman', {
+      ruangId: ruangSaatIni.id,
+      imageData: imageKecil,
+      halaman: idx + 1,
+      totalHalaman: halamanPresentasi.length,
+      namaFile: namaFilePresentasi
+    }, (err) => {
+      if (err) console.warn('Emit presentasi timeout (aman):', err.message);
+    });
+  } catch(e) {
+    console.warn('Gagal kompres/emit presentasi:', e);
+  } finally {
+    setTimeout(() => { _emiSedangBerjalan = false; }, 300);
+  }
 }
 
 function navigasiHalaman(arah) { tampilHalamanPresentasi(halamanSaatIni + arah); }
