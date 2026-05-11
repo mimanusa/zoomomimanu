@@ -24,6 +24,18 @@ const io = socketIO(server, {
 // ---- MIDDLEWARE ----
 app.use(cors());
 app.use(express.json());
+// Paksa browser tidak cache file HTML agar perubahan langsung terasa tanpa hard refresh
+app.use((req, res, next) => {
+  const isHtmlRoute = req.path.endsWith('.html') || req.path === '/' ||
+    req.path === '/guru' || req.path === '/siswa' || req.path.startsWith('/ruang/');
+  if (isHtmlRoute) {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  next();
+});
+
 app.use(express.static(path.join(__dirname, '../public')));
 
 // =====================================================
