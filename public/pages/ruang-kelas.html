@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Ruang ZooMimanu</title>
   <link rel="stylesheet" href="/css/style.css">
   <!-- PWA -->
@@ -301,6 +304,71 @@
       display: none;
       z-index: 100;
       animation: slideIn 0.3s ease;
+    }
+
+    /* ---- MOBILE LAYOUT ---- */
+    @media (max-width: 640px) {
+      .area-utama {
+        flex-direction: column;
+      }
+
+      /* Video area ambil ruang secukupnya, tidak terlalu besar */
+      .area-video {
+        flex: none;
+        height: 55vh;
+      }
+
+      /* Grid video di HP lebih kecil */
+      .grid-video {
+        padding: 6px;
+        gap: 6px;
+      }
+
+      /* Kontrol video lebih ramping di HP */
+      .kontrol-video {
+        padding: 8px 12px;
+        gap: 8px;
+      }
+      .btn-kontrol {
+        width: 40px;
+        height: 40px;
+        font-size: 15px;
+      }
+
+      /* Sidebar chat: sisanya di bawah, tidak full screen */
+      .sidebar-chat {
+        width: 100%;
+        flex: 1;
+        border-left: none;
+        border-top: 1px solid #334155;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Daftar peserta lebih ramping */
+      .daftar-peserta-chat {
+        max-height: 60px;
+        padding: 6px 12px;
+      }
+
+      /* Area pesan chat mengisi sisa ruang */
+      .area-pesan-chat {
+        flex: 1;
+        min-height: 0;
+      }
+
+      /* Input chat tetap kelihatan */
+      .input-chat-area {
+        padding: 8px;
+        flex-shrink: 0;
+      }
+
+      /* Tab nav lebih kecil di HP */
+      .tab-nav button {
+        padding: 8px 12px;
+        font-size: 12px;
+      }
     }
   </style>
 </head>
@@ -1285,7 +1353,6 @@ function gantiPanel(nama, el) {
 function keluarRuang() {
   if (confirm('Yakin ingin keluar dari ruang kelas?')) {
     if (streamLokal) streamLokal.getTracks().forEach(t => t.stop());
-    window.close();
     window.location.href = penggunaSaatIni.role === 'guru' ? '/guru' : '/siswa';
   }
 }
