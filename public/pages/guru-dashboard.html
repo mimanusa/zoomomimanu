@@ -281,12 +281,6 @@
         <p id="kelas-guru-sidebar">—</p>
       </div>
 
-      <div class="sidebar-section">
-        <h4>Buat Ruang Baru</h4>
-        <input type="text" id="judul-ruang" class="sidebar-input" placeholder="Judul sesi (opsional)" />
-        <button class="btn-sidebar" onclick="buatRuang()">+ Buat Ruang Kelas</button>
-      </div>
-
       <div class="sidebar-section" style="flex:1;">
         <h4>Ruang Aktif Saya</h4>
         <div id="daftar-ruang">
@@ -302,7 +296,7 @@
         <div class="selamat-datang">
           <span class="icon-besar">🏫</span>
           <h3>Selamat datang di ZooMimanu!</h3>
-          <p>Klik "Buat Ruang Kelas" di sidebar untuk memulai sesi belajar online.</p>
+          <p>Menyiapkan ruang kelas Anda...</p>
         </div>
       </div>
 
@@ -391,19 +385,25 @@
       const ruangku = (hasil.data || []).filter(r => r.guruId === penggunaSaatIni.id);
       
       if (ruangku.length === 0) {
-        container.innerHTML = '<p style="font-size:12px; color:rgba(255,255,255,0.3); text-align:center; padding:16px 0;">Belum ada ruang aktif</p>';
+        // Tidak ada ruang aktif — buat otomatis
+        await buatRuangOtomatis();
         return;
       }
+
       container.innerHTML = ruangku.map(r => `
         <div class="kartu-ruang" onclick="pilihRuang('${r.id}', '${r.kode}', '${r.judul}')">
           <div class="kode">${r.kode}</div>
           <div class="info">${r.judul} · ${new Date(r.dibuatPada).toLocaleTimeString('id-ID')}</div>
         </div>
       `).join('');
+
+      // Langsung masuk ke ruang pertama
+      const r = ruangku[0];
+      pilihRuang(r.id, r.kode, r.judul);
     }
 
-    async function buatRuang() {
-      const judul = document.getElementById('judul-ruang').value.trim() || `Kelas ${penggunaSaatIni.kelas}`;
+    async function buatRuangOtomatis() {
+      const judul = `Kelas ${penggunaSaatIni.kelas}`;
       const resp = await fetch('/api/ruang/buat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -411,9 +411,15 @@
       });
       const hasil = await resp.json();
       if (hasil.sukses) {
-        tampilNotif(`✅ Ruang "${hasil.data.kode}" berhasil dibuat!`);
-        pilihRuang(hasil.data.id, hasil.data.kode, hasil.data.judul);
-        muatRuangAktif();
+        const r = hasil.data;
+        const container = document.getElementById('daftar-ruang');
+        container.innerHTML = `
+          <div class="kartu-ruang aktif" onclick="pilihRuang('${r.id}', '${r.kode}', '${r.judul}')">
+            <div class="kode">${r.kode}</div>
+            <div class="info">${r.judul} · ${new Date(r.dibuatPada).toLocaleTimeString('id-ID')}</div>
+          </div>
+        `;
+        pilihRuang(r.id, r.kode, r.judul);
       }
     }
 
