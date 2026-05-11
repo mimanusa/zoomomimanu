@@ -2,9 +2,8 @@
 // SERVICE WORKER — ZooMimanu PWA
 // =====================================================
 
-const CACHE_NAME = 'zoomomimanu-v1';
+const CACHE_NAME = 'zoomomimanu-v2'; // ← naikan versi
 const ASSETS_TO_CACHE = [
-  '/',
   '/css/style.css',
   '/manifest.json',
   '/icons/icon-192x192.png',
@@ -12,17 +11,13 @@ const ASSETS_TO_CACHE = [
   '/favicon.png'
 ];
 
-// Install: cache shell assets
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS_TO_CACHE))
   );
   self.skipWaiting();
 });
 
-// Activate: clean old caches
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -32,16 +27,23 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// Fetch: network-first for API, cache-first for assets
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // API calls: always network
+  // API & socket: selalu network, jangan disentuh
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/socket.io/')) {
     return;
   }
 
-  // Assets: cache-first, fallback to network
+  // ✅ HTML pages: selalu ambil dari network, jangan cache
+  if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match('/'))
+    );
+    return;
+  }
+
+  // CSS/gambar/icon: cache-first (boleh di-cache)
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
@@ -51,11 +53,6 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }
         return response;
-      }).catch(() => {
-        // Offline fallback for navigation
-        if (event.request.mode === 'navigate') {
-          return caches.match('/');
-        }
       });
     })
   );
