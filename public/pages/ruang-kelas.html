@@ -377,6 +377,17 @@
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
           Bersihkan
         </button>
+        <label class="btn btn-kecil" style="background:#6C3CE1;color:white;cursor:pointer;" title="Upload PDF atau Gambar untuk Presentasi">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Presentasi
+          <input type="file" id="input-presentasi" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp" style="display:none;" onchange="muatPresentasi(this)">
+        </label>
+        <span id="info-presentasi" style="font-size:12px;color:#6C3CE1;font-weight:700;display:none;">
+          <button class="btn btn-kecil btn-abu" onclick="navigasiHalaman(-1)">&#8592;</button>
+          <span id="teks-halaman">1/1</span>
+          <button class="btn btn-kecil btn-abu" onclick="navigasiHalaman(1)">&#8594;</button>
+          <button class="btn btn-kecil btn-merah" onclick="akhiriPresentasi()" style="margin-left:4px;">Stop</button>
+        </span>
       </div>
       <canvas id="papan-canvas"></canvas>
     </div>
@@ -625,13 +636,29 @@ function hubungkanSocket() {
 // =====================================================
 // WebRTC - VIDEO CALL
 // =====================================================
+
+// Cache konfigurasi WebRTC dari server (STUN + TURN)
+let webRTCConfig = null;
+async function ambilWebRTCConfig() {
+  if (webRTCConfig) return webRTCConfig;
+  try {
+    const resp = await fetch('/api/webrtc-config');
+    webRTCConfig = await resp.json();
+  } catch (e) {
+    // Fallback jika gagal ambil config
+    webRTCConfig = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
+    };
+  }
+  return webRTCConfig;
+}
+
 async function mulaiWebRTC(targetSocketId, kirimOffer) {
-  const pc = new RTCPeerConnection({
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' }
-    ]
-  });
+  const config = await ambilWebRTCConfig();
+  const pc = new RTCPeerConnection(config);
 
   koneksiPeer[targetSocketId] = pc;
 
@@ -900,6 +927,125 @@ function bersihkanPapan() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   socket.emit('papan-tulis-bersihkan', { ruangId: ruangSaatIni.id });
 }
+
+// =====================================================
+// PRESENTASI DOKUMEN
+// =====================================================
+let halamanPresentasi = [];
+let halamanSaatIni = 0;
+
+async function muatPresentasi(input) {
+  const file = input.files[0];
+  if (!file) return;
+  halamanPresentasi = [];
+  halamanSaatIni = 0;
+
+  if (file.type === 'application/pdf') {
+    // Load PDF.js dari CDN
+    if (!window.pdfjsLib) {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const offscreen = document.createElement('canvas');
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 1.5 });
+      offscreen.width = viewport.width;
+      offscreen.height = viewport.height;
+      const ctx = offscreen.getContext('2d');
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      halamanPresentasi.push(offscreen.toDataURL('image/jpeg', 0.85));
+    }
+  } else {
+    // Gambar biasa
+    const imageData = await new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result);
+      reader.readAsDataURL(file);
+    });
+    halamanPresentasi.push(imageData);
+  }
+
+  if (halamanPresentasi.length === 0) return;
+  document.getElementById('info-presentasi').style.display = 'inline-flex';
+  document.getElementById('info-presentasi').style.alignItems = 'center';
+  document.getElementById('info-presentasi').style.gap = '4px';
+  tampilHalamanPresentasi(0, file.name);
+  input.value = '';
+}
+
+function tampilHalamanPresentasi(idx, namaFile) {
+  if (idx < 0 || idx >= halamanPresentasi.length) return;
+  halamanSaatIni = idx;
+  const imageData = halamanPresentasi[idx];
+  const canvas = document.getElementById('papan-canvas');
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  img.onload = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+    const x = (canvas.width - img.width * scale) / 2;
+    const y = (canvas.height - img.height * scale) / 2;
+    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+  };
+  img.src = imageData;
+  document.getElementById('teks-halaman').textContent = (idx+1) + '/' + halamanPresentasi.length;
+  // Broadcast ke semua peserta
+  socket.emit('presentasi-halaman', {
+    ruangId: ruangSaatIni.id,
+    imageData,
+    halaman: idx + 1,
+    totalHalaman: halamanPresentasi.length,
+    namaFile: namaFile || 'Presentasi'
+  });
+}
+
+function navigasiHalaman(arah) {
+  tampilHalamanPresentasi(halamanSaatIni + arah);
+}
+
+function akhiriPresentasi() {
+  halamanPresentasi = [];
+  halamanSaatIni = 0;
+  document.getElementById('info-presentasi').style.display = 'none';
+  const canvas = document.getElementById('papan-canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  socket.emit('presentasi-selesai', { ruangId: ruangSaatIni.id });
+  socket.emit('papan-tulis-bersihkan', { ruangId: ruangSaatIni.id });
+}
+
+// Terima presentasi dari guru
+socket.on('presentasi-halaman', ({ imageData, halaman, totalHalaman, namaFile }) => {
+  const canvas = document.getElementById('papan-canvas');
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  img.onload = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+    const x = (canvas.width - img.width * scale) / 2;
+    const y = (canvas.height - img.height * scale) / 2;
+    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+  };
+  img.src = imageData;
+  // Tampilkan notif halaman
+  tampilNotif('📄 ' + namaFile + ' — Halaman ' + halaman + '/' + totalHalaman);
+});
+
+socket.on('presentasi-selesai', () => {
+  const canvas = document.getElementById('papan-canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  tampilNotif('✅ Presentasi selesai');
+});
 
 // =====================================================
 // TUGAS
