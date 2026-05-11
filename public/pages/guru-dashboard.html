@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Guru — ZooMimanu</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0F172A">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ZooMimanu">
+  <link rel="apple-touch-icon" href="/icons/icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <style>
+    .layout { display: grid; grid-template-columns: 300px 1fr; min-height: calc(100vh - 62px); }
+
+    /* ---- SIDEBAR ---- */
+    .sidebar {
+      background: #0F172A;
+      padding: 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-profil {
+      background: linear-gradient(145deg, #1E293B, #0F172A);
+      padding: 28px 20px 24px;
+      text-align: center;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .avatar-guru {
+      width: 72px; height: 72px;
+      background: linear-gradient(135deg, #6C3CE1, #00C896);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin: 0 auto 14px;
+      box-shadow: 0 8px 24px rgba(108,60,225,0.4);
+    }
+    .sidebar-profil h3 { font-size: 15px; font-weight: 800; color: white; margin-bottom: 4px; }
+    .sidebar-profil p { font-size: 12px; color: rgba(255,255,255,0.5); font-weight: 600; }
+
+    .sidebar-section {
+      padding: 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .sidebar-section h4 {
+      font-size: 10px;
+      color: rgba(255,255,255,0.35);
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 14px;
+    }
+
+    .sidebar-input {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: white;
+      border-radius: 10px;
+      padding: 11px 14px;
+      font-size: 13px;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 600;
+      width: 100%;
+      margin-bottom: 10px;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .sidebar-input:focus { border-color: rgba(108,60,225,0.6); background: rgba(255,255,255,0.1); }
+    .sidebar-input::placeholder { color: rgba(255,255,255,0.25); }
+
+    .btn-sidebar {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #6C3CE1, #00C896);
+      color: white;
+      font-weight: 800;
+      font-size: 13px;
+      font-family: 'Nunito', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-sidebar:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    .kartu-ruang {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .kartu-ruang:hover { background: rgba(108,60,225,0.2); border-color: rgba(108,60,225,0.4); }
+    .kartu-ruang.aktif { background: rgba(108,60,225,0.25); border-color: #6C3CE1; }
+    .kartu-ruang .kode { font-size: 16px; font-weight: 900; color: #A78BFA; font-family: monospace; }
+    .kartu-ruang .info { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 4px; font-weight: 600; }
+
+    /* ---- KONTEN UTAMA ---- */
+    .konten-utama { padding: 28px; overflow-y: auto; background: #F8FAFC; }
+
+    .selamat-datang {
+      text-align: center;
+      padding: 80px 40px;
+      color: var(--abu);
+    }
+    .selamat-datang .icon-besar { font-size: 72px; margin-bottom: 20px; display: block; }
+    .selamat-datang h3 { font-family: 'Sora', sans-serif; font-size: 22px; color: var(--teks); margin-bottom: 10px; }
+    .selamat-datang p { font-size: 14px; max-width: 340px; margin: 0 auto; }
+
+    /* Header Ruang */
+    .ruang-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      background: white;
+      padding: 20px 24px;
+      border-radius: 16px;
+      box-shadow: var(--bayangan);
+    }
+    .ruang-header .nama { font-family: 'Sora', sans-serif; font-size: 20px; font-weight: 800; color: var(--gelap); }
+    .kode-display {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--primary-light);
+      padding: 8px 16px;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .kode-display:hover { background: #D8D0F9; }
+    .kode-display .kode-teks {
+      font-family: monospace;
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--primary);
+      letter-spacing: 0.05em;
+    }
+    .kode-display .kode-label { font-size: 11px; color: var(--primary); font-weight: 700; }
+
+    /* Grid kartu */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+
+    .kartu-modern {
+      background: white;
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: var(--bayangan);
+    }
+    .kartu-modern h3 {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--teks);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .kartu-modern h3 .icon-judul {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+    }
+    .icon-hijau { background: #D1FAE5; }
+    .icon-kuning { background: #FEF3C7; }
+    .icon-ungu { background: var(--primary-light); }
+    .icon-biru { background: #DBEAFE; }
+
+    .siswa-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 10px;
+      margin-bottom: 6px;
+      background: var(--abu-muda);
+    }
+    .siswa-item .nama-siswa { font-size: 13px; font-weight: 700; }
+    .siswa-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--secondary); flex-shrink: 0; }
+
+    .tugas-input {
+      background: #F8FAFC;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 14px;
+      font-size: 13px;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 600;
+      width: 100%;
+      margin-bottom: 10px;
+      outline: none;
+      transition: all 0.2s;
+      resize: vertical;
+      color: var(--teks);
+    }
+    .tugas-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(108,60,225,0.08); }
+
+    .jawaban-item {
+      background: #F8FAFC;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 8px;
+      border-left: 3px solid var(--secondary);
+    }
+    .jawaban-item .nama { font-size: 12px; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
+    .jawaban-item .isi { font-size: 13px; color: var(--teks); }
+    .jawaban-item .waktu { font-size: 11px; color: var(--abu); margin-top: 4px; }
+
+    .tugas-card {
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 16px;
+      transition: all 0.2s;
+    }
+    .tugas-card:hover { border-color: #A78BFA; }
+    .tugas-card .tugas-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .tugas-judul { font-size: 14px; font-weight: 800; color: var(--teks); }
+    .tugas-waktu { font-size: 11px; color: var(--abu); margin-top: 3px; font-weight: 600; }
+    .tugas-soal {
+      background: var(--primary-light);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13px;
+      color: var(--primary-dark);
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { max-height: 350px; }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header-app">
+    <div class="logo">
+      <div class="logo-icon" style="background:none;padding:0;overflow:hidden;">
+        <img src="/icons/icon-72x72.png" alt="Z" style="width:36px;height:36px;border-radius:9px;object-fit:cover;display:block;">
+      </div>
+      Zoo<span>Mimanu</span>
+    </div>
+    <div style="display:flex; align-items:center; gap: 12px;">
+      <span class="info-user" id="info-header">Memuat...</span>
+      <button class="btn btn-kecil btn-merah" onclick="keluar()">Keluar</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- Sidebar Gelap -->
+    <div class="sidebar">
+      <div class="sidebar-profil">
+        <div class="avatar-guru">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+          </svg>
+        </div>
+        <h3 id="nama-guru-sidebar">—</h3>
+        <p id="kelas-guru-sidebar">—</p>
+      </div>
+
+      <div class="sidebar-section">
+        <h4>Buat Ruang Baru</h4>
+        <input type="text" id="judul-ruang" class="sidebar-input" placeholder="Judul sesi (opsional)" />
+        <button class="btn-sidebar" onclick="buatRuang()">+ Buat Ruang Kelas</button>
+      </div>
+
+      <div class="sidebar-section" style="flex:1;">
+        <h4>Ruang Aktif Saya</h4>
+        <div id="daftar-ruang">
+          <p style="font-size:12px; color:rgba(255,255,255,0.3); text-align:center; padding:16px 0;">Belum ada ruang aktif</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Konten Utama -->
+    <div class="konten-utama">
+      <!-- Tampilan Awal -->
+      <div id="tampilan-awal">
+        <div class="selamat-datang">
+          <span class="icon-besar">🏫</span>
+          <h3>Selamat datang di ZooMimanu!</h3>
+          <p>Klik "Buat Ruang Kelas" di sidebar untuk memulai sesi belajar online.</p>
+        </div>
+      </div>
+
+      <!-- Dashboard Ruang -->
+      <div id="dashboard-ruang" style="display:none;">
+        <div class="ruang-header">
+          <div>
+            <div class="nama" id="judul-ruang-aktif">Nama Ruang</div>
+            <div style="font-size:13px; color:var(--abu); margin-top:4px; font-weight:600;">Bagikan kode ini ke siswa</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div class="kode-display" onclick="salinKode()" title="Klik untuk salin">
+              <div>
+                <div class="kode-label">KODE RUANG</div>
+                <div class="kode-teks" id="kode-ruang-aktif">—</div>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/></svg>
+            </div>
+            <button class="btn btn-utama" onclick="masukRuangVideo()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+              Masuk Video Call
+            </button>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <!-- Siswa Online -->
+          <div class="kartu-modern">
+            <h3>
+              <div class="icon-judul icon-hijau">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+              </div>
+              Siswa Online
+            </h3>
+            <div id="daftar-peserta" style="font-size:13px; color:var(--abu); font-weight:600;">Belum ada siswa bergabung</div>
+          </div>
+
+          <!-- Kirim Tugas -->
+          <div class="kartu-modern">
+            <h3>
+              <div class="icon-judul icon-kuning">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              </div>
+              Kirim Tugas
+            </h3>
+            <input type="text" id="judul-tugas" class="tugas-input" placeholder="Judul tugas..." />
+            <textarea id="soal-tugas" class="tugas-input" rows="3" placeholder="Tulis soal / pertanyaan..."></textarea>
+            <button class="btn btn-kuning" style="width:100%; border-radius:10px;" onclick="kirimTugas()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              Kirim Tugas ke Siswa
+            </button>
+          </div>
+        </div>
+
+        <!-- Tugas & Jawaban -->
+        <div class="kartu-modern">
+          <h3>
+            <div class="icon-judul icon-ungu">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+              </div>
+            Tugas & Jawaban Siswa
+          </h3>
+          <div id="daftar-tugas">
+            <p style="color:var(--abu); font-size:13px; font-weight:600; text-align:center; padding:20px 0;">Belum ada tugas dikirim.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="notif" class="notif" style="display:none;"></div>
+
+  <script>
+    let penggunaSaatIni = null;
+    let ruangDipilih = null;
+
+    window.onload = function() {
+      const data = localStorage.getItem('penggunaSaatIni');
+      if (!data) return window.location.href = '/';
+      penggunaSaatIni = JSON.parse(data);
+      if (penggunaSaatIni.role !== 'guru') return window.location.href = '/';
+
+      document.getElementById('info-header').textContent = `${penggunaSaatIni.namaGuru}`;
+      document.getElementById('nama-guru-sidebar').textContent = penggunaSaatIni.namaGuru;
+      document.getElementById('kelas-guru-sidebar').textContent = `${penggunaSaatIni.mataPelajaran} · Kelas ${penggunaSaatIni.kelas}`;
+      muatRuangAktif();
+    };
+
+    async function muatRuangAktif() {
+      const resp = await fetch(`/api/ruang/aktif/${penggunaSaatIni.kelas}`);
+      const hasil = await resp.json();
+      const container = document.getElementById('daftar-ruang');
+      const ruangku = (hasil.data || []).filter(r => r.guruId === penggunaSaatIni.id);
+      
+      if (ruangku.length === 0) {
+        container.innerHTML = '<p style="font-size:12px; color:rgba(255,255,255,0.3); text-align:center; padding:16px 0;">Belum ada ruang aktif</p>';
+        return;
+      }
+      container.innerHTML = ruangku.map(r => `
+        <div class="kartu-ruang" onclick="pilihRuang('${r.id}', '${r.kode}', '${r.judul}')">
+          <div class="kode">${r.kode}</div>
+          <div class="info">${r.judul} · ${new Date(r.dibuatPada).toLocaleTimeString('id-ID')}</div>
+        </div>
+      `).join('');
+    }
+
+    async function buatRuang() {
+      const judul = document.getElementById('judul-ruang').value.trim() || `Kelas ${penggunaSaatIni.kelas}`;
+      const resp = await fetch('/api/ruang/buat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ guruId: penggunaSaatIni.id, namaGuru: penggunaSaatIni.namaGuru, kelas: penggunaSaatIni.kelas, judul })
+      });
+      const hasil = await resp.json();
+      if (hasil.sukses) {
+        tampilNotif(`✅ Ruang "${hasil.data.kode}" berhasil dibuat!`);
+        pilihRuang(hasil.data.id, hasil.data.kode, hasil.data.judul);
+        muatRuangAktif();
+      }
+    }
+
+    function pilihRuang(id, kode, judul) {
+      ruangDipilih = { id, kode, judul };
+      document.getElementById('tampilan-awal').style.display = 'none';
+      document.getElementById('dashboard-ruang').style.display = 'block';
+      document.getElementById('judul-ruang-aktif').textContent = judul;
+      document.getElementById('kode-ruang-aktif').textContent = kode;
+      document.querySelectorAll('.kartu-ruang').forEach(el => el.classList.remove('aktif'));
+      muatTugas();
+    }
+
+    function masukRuangVideo() {
+      if (!ruangDipilih) return;
+      localStorage.setItem('ruangSaatIni', JSON.stringify(ruangDipilih));
+      window.open(`/ruang/${ruangDipilih.id}`, '_blank');
+    }
+
+    function salinKode() {
+      navigator.clipboard.writeText(ruangDipilih.kode);
+      tampilNotif('📋 Kode ruang disalin!');
+    }
+
+    async function kirimTugas() {
+      if (!ruangDipilih) return tampilNotif('❌ Pilih ruang terlebih dahulu!');
+      const judul = document.getElementById('judul-tugas').value.trim();
+      const soal = document.getElementById('soal-tugas').value.trim();
+      if (!judul || !soal) return tampilNotif('❌ Judul dan soal wajib diisi!');
+
+      const resp = await fetch('/api/tugas/kirim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ruangId: ruangDipilih.id, guruId: penggunaSaatIni.id, namaGuru: penggunaSaatIni.namaGuru, judul, soal, kelas: penggunaSaatIni.kelas })
+      });
+      const hasil = await resp.json();
+      if (hasil.sukses) {
+        tampilNotif('✅ Tugas berhasil dikirim!');
+        document.getElementById('judul-tugas').value = '';
+        document.getElementById('soal-tugas').value = '';
+        muatTugas();
+      }
+    }
+
+    async function muatTugas() {
+      if (!ruangDipilih) return;
+      const resp = await fetch(`/api/tugas/ruang/${ruangDipilih.id}`);
+      const hasil = await resp.json();
+      const container = document.getElementById('daftar-tugas');
+
+      if (!hasil.data || hasil.data.length === 0) {
+        container.innerHTML = '<p style="color:var(--abu); font-size:13px; font-weight:600; text-align:center; padding:20px 0;">Belum ada tugas dikirim.</p>';
+        return;
+      }
+      container.innerHTML = hasil.data.map(t => `
+        <div class="tugas-card">
+          <div class="tugas-top">
+            <div>
+              <div class="tugas-judul">${t.judul}</div>
+              <div class="tugas-waktu">${new Date(t.dibuatPada).toLocaleString('id-ID')}</div>
+            </div>
+            <span class="badge badge-ungu">${t.jawaban.length} jawaban</span>
+          </div>
+          <div class="tugas-soal">${t.soal}</div>
+          ${t.jawaban.length === 0 ? '<p style="font-size:12px; color:var(--abu); font-weight:600;">Belum ada jawaban masuk.</p>' : ''}
+          ${t.jawaban.map(j => `
+            <div class="jawaban-item">
+              <div class="nama">${j.namaSiswa}</div>
+              <div class="isi">${j.jawaban}</div>
+              <div class="waktu">${new Date(j.dikirimPada).toLocaleString('id-ID')}</div>
+            </div>
+          `).join('')}
+        </div>
+      `).join('');
+    }
+
+    setInterval(() => { if (ruangDipilih) muatTugas(); }, 10000);
+
+    function tampilNotif(pesan) {
+      const el = document.getElementById('notif');
+      el.textContent = pesan;
+      el.style.display = 'block';
+      setTimeout(() => el.style.display = 'none', 3000);
+    }
+
+    function keluar() {
+      localStorage.removeItem('penggunaSaatIni');
+      window.location.href = '/';
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(console.error);
+    }
+  </script>
+</body>
+</html>

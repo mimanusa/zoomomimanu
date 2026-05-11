@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZooMimanu — Daring Tanpa Ribet</title>
+  <link rel="stylesheet" href="/css/style.css">
+
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1565FF">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ZooMimanu">
+  <link rel="apple-touch-icon" href="/icons/icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+
+  <style>
+    body {
+      display: flex;
+      min-height: 100vh;
+      background: #060D1F;
+      overflow: hidden;
+    }
+
+    /* ---- PANEL KIRI - ILUSTRASI ---- */
+    .panel-kiri {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .bg-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(90px);
+      opacity: 0.3;
+      animation: float 10s ease-in-out infinite;
+    }
+    .blob1 { width: 500px; height: 500px; background: #1565FF; top: -150px; left: -150px; }
+    .blob2 { width: 350px; height: 350px; background: #00C8FF; bottom: -100px; right: -80px; animation-delay: -5s; }
+    .blob3 { width: 250px; height: 250px; background: #0038B8; top: 50%; left: 40%; animation-delay: -2.5s; }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33%  { transform: translate(30px, -25px) scale(1.06); }
+      66%  { transform: translate(-20px, 35px) scale(0.94); }
+    }
+
+    .panel-kiri-konten {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      color: white;
+      max-width: 480px;
+    }
+
+    /* Logo besar pakai gambar */
+    .logo-besar { margin-bottom: 36px; }
+    .logo-img-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 22px;
+      padding: 14px 22px;
+      margin-bottom: 32px;
+    }
+    .logo-img-wrap img {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      object-fit: cover;
+    }
+    .logo-teks { text-align: left; }
+    .logo-teks .brand { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 20px; color: white; }
+    .logo-teks .tagline { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; letter-spacing: 0.04em; }
+
+    .logo-besar h1 {
+      font-family: 'Sora', sans-serif;
+      font-size: 40px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      background: linear-gradient(135deg, #fff 0%, #60AAFF 50%, #00E5FF 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+      line-height: 1.1;
+    }
+    .logo-besar p { font-size: 16px; opacity: 0.65; font-weight: 500; }
+
+    .fitur-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      text-align: left;
+    }
+    .fitur-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 14px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.88);
+      transition: all 0.2s;
+    }
+    .fitur-item:hover { background: rgba(255,255,255,0.1); border-color: rgba(21,101,255,0.4); }
+
+    .fitur-ikon {
+      width: 42px; height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .fi-biru   { background: rgba(21,101,255,0.35); }
+    .fi-cyan   { background: rgba(0,200,255,0.25); }
+    .fi-kuning { background: rgba(255,184,76,0.3); }
+    .fi-hijau  { background: rgba(0,200,150,0.25); }
+
+    /* SVG icon inside fitur */
+    .fitur-ikon svg { width: 22px; height: 22px; }
+
+    /* ---- PANEL KANAN - FORM ---- */
+    .panel-kanan {
+      width: 480px;
+      background: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 52px 48px;
+      position: relative;
+      overflow-y: auto;
+    }
+
+    .panel-kanan::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #1565FF, #00C8FF, #0038B8);
+    }
+
+    /* Logo kecil di form */
+    .form-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .form-logo img { width: 40px; height: 40px; border-radius: 10px; object-fit: cover; }
+    .form-logo-teks .brand { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 17px; color: #0F172A; }
+    .form-logo-teks .tagline { font-size: 11px; color: #94a3b8; }
+
+    .judul-form { margin-bottom: 28px; }
+    .judul-form h2 {
+      font-family: 'Sora', sans-serif;
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--gelap);
+      margin-bottom: 5px;
+      letter-spacing: -0.02em;
+    }
+    .judul-form p { color: var(--teks-abu); font-size: 14px; font-weight: 500; }
+
+    /* Tab switcher */
+    .tab-switcher {
+      display: flex;
+      background: var(--abu-muda);
+      border-radius: 14px;
+      padding: 5px;
+      margin-bottom: 26px;
+    }
+    .tab-btn {
+      flex: 1; padding: 11px;
+      border: none; border-radius: 10px;
+      background: transparent; color: var(--teks-abu);
+      cursor: pointer; font-size: 13px; font-weight: 700;
+      font-family: 'Nunito', sans-serif; transition: all 0.25s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .tab-btn.aktif {
+      background: white;
+      color: #1565FF;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    }
+    .tab-btn svg { width: 17px; height: 17px; }
+
+    .form-login { display: none; }
+    .form-login.tampil { display: block; animation: fadeInUp 0.3s ease; }
+
+    /* Modern primary button — blue (matches logo) */
+    .btn-masuk {
+      background: linear-gradient(135deg, #1565FF, #0038B8);
+      color: white;
+      box-shadow: 0 6px 20px rgba(21,101,255,0.4);
+    }
+    .btn-guru-masuk {
+      background: linear-gradient(135deg, #0D47A1, #1565FF);
+      color: white;
+      box-shadow: 0 6px 20px rgba(13,71,161,0.4);
+    }
+
+    .footer-login {
+      text-align: center;
+      color: var(--abu);
+      margin-top: 28px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+
+    /* ===== PWA INSTALL MODAL ===== */
+    #pwa-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(6, 13, 31, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      animation: fadeOverlay 0.3s ease;
+    }
+    #pwa-overlay.tampil { display: flex; }
+
+    @keyframes fadeOverlay {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    #pwa-modal {
+      background: white;
+      border-radius: 28px;
+      padding: 36px 32px 28px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+      animation: slideModal 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+    }
+    @keyframes slideModal {
+      from { transform: translateY(40px) scale(0.95); opacity: 0; }
+      to   { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    #pwa-modal .modal-logo {
+      width: 88px; height: 88px;
+      border-radius: 22px;
+      margin: 0 auto 20px;
+      display: block;
+      box-shadow: 0 12px 32px rgba(21,101,255,0.35);
+    }
+    #pwa-modal h2 {
+      font-family: 'Sora', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: #0F172A;
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+    #pwa-modal p {
+      color: #64748B;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .pwa-benefits {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 28px;
+      text-align: left;
+    }
+    .pwa-benefit-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #F8FAFC;
+      border-radius: 12px;
+      padding: 11px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #1E293B;
+    }
+    .pwa-benefit-item .bicon {
+      width: 34px; height: 34px;
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .bicon-blue  { background: #DBEAFE; }
+    .bicon-green { background: #D1FAE5; }
+    .bicon-yellow{ background: #FEF3C7; }
+
+    #btn-install-now {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #1565FF, #0038B8);
+      color: white;
+      border: none;
+      border-radius: 16px;
+      font-size: 16px;
+      font-weight: 800;
+      font-family: 'Nunito', sans-serif;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(21,101,255,0.45);
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    #btn-install-now:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(21,101,255,0.5); }
+    #btn-install-now:active { transform: scale(0.98); }
+
+    #btn-skip {
+      background: none;
+      border: none;
+      color: #94A3B8;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Nunito', sans-serif;
+      width: 100%;
+      padding: 8px;
+    }
+    #btn-skip:hover { color: #64748B; }
+
+    /* iOS instructions panel */
+    #ios-steps {
+      display: none;
+      background: #EFF6FF;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    #ios-steps p { margin-bottom: 10px; font-weight: 700; font-size: 13px; color: #1565FF; }
+    .ios-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #1E293B;
+      margin-bottom: 8px;
+    }
+    .ios-step .num {
+      width: 24px; height: 24px;
+      background: #1565FF;
+      color: white;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 480px) {
+      #pwa-modal { padding: 28px 20px 22px; border-radius: 22px; }
+    }
+
+    @media (max-width: 900px) { .panel-kiri { display: none; } .panel-kanan { width: 100%; } }
+    @media (max-width: 480px) { .panel-kanan { padding: 32px 24px; } }
+  </style>
+</head>
+<body>
+
+  <!-- Panel Kiri - Branding -->
+  <div class="panel-kiri">
+    <div class="bg-blob blob1"></div>
+    <div class="bg-blob blob2"></div>
+    <div class="bg-blob blob3"></div>
+
+    <div class="panel-kiri-konten">
+      <div class="logo-besar">
+        <div class="logo-img-wrap">
+          <img src="/icons/icon-96x96.png" alt="ZooMimanu Logo">
+          <div class="logo-teks">
+            <div class="brand">ZooMimanu</div>
+            <div class="tagline">— daring tanpa ribet —</div>
+          </div>
+        </div>
+        <h1>Belajar Lebih Seru<br>Bersama ZooMimanu!</h1>
+        <p>Video call, papan tulis, dan tugas — semua dalam satu tempat.</p>
+      </div>
+
+      <div class="fitur-list">
+        <div class="fitur-item">
+          <div class="fitur-ikon fi-biru">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#60AAFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+            </svg>
+          </div>
+          <div>
+            <div>Video Call Real-Time</div>
+            <div style="font-weight:500;opacity:0.65;font-size:12px;margin-top:2px;">Guru dan siswa bertatap muka langsung</div>
+          </div>
+        </div>
+        <div class="fitur-item">
+          <div class="fitur-ikon fi-cyan">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#00E5FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
+          </div>
+          <div>
+            <div>Papan Tulis Digital</div>
+            <div style="font-weight:500;opacity:0.65;font-size:12px;margin-top:2px;">Guru menulis, siswa langsung melihat</div>
+          </div>
+        </div>
+        <div class="fitur-item">
+          <div class="fitur-ikon fi-kuning">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#FFB84C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+            </svg>
+          </div>
+          <div>
+            <div>Kirim &amp; Jawab Tugas</div>
+            <div style="font-weight:500;opacity:0.65;font-size:12px;margin-top:2px;">Tugas langsung dari ruang kelas</div>
+          </div>
+        </div>
+        <div class="fitur-item">
+          <div class="fitur-ikon fi-hijau">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#00E5AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+            </svg>
+          </div>
+          <div>
+            <div>Chat Real-Time</div>
+            <div style="font-weight:500;opacity:0.65;font-size:12px;margin-top:2px;">Diskusi langsung di dalam kelas</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel Kanan - Login Form -->
+  <div class="panel-kanan">
+
+    <!-- Logo di form -->
+    <div class="form-logo">
+      <img src="/icons/icon-96x96.png" alt="ZooMimanu">
+      <div class="form-logo-teks">
+        <div class="brand">ZooMimanu</div>
+        <div class="tagline">daring tanpa ribet</div>
+      </div>
+    </div>
+
+    <!-- PWA Install Modal -->
+    <div id="pwa-overlay">
+      <div id="pwa-modal">
+        <img src="/icons/icon-192x192.png" alt="ZooMimanu" class="modal-logo">
+        <h2>Pasang ZooMimanu!</h2>
+        <p>Akses kelas lebih cepat langsung dari layar utama — tanpa buka browser dulu.</p>
+
+        <div class="pwa-benefits">
+          <div class="pwa-benefit-item">
+            <div class="bicon bicon-blue">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1565FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><path d="M6 12h12"/><path d="M3 5v14a2 2 0 002 2h1"/></svg>
+            </div>
+            Buka langsung dari ikon di layar utama
+          </div>
+          <div class="pwa-benefit-item">
+            <div class="bicon bicon-green">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.15 1.19 2 2 0 012.11 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91"/></svg>
+            </div>
+            Notifikasi tugas & kelas real-time
+          </div>
+          <div class="pwa-benefit-item">
+            <div class="bicon bicon-yellow">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </div>
+            Lebih cepat & hemat kuota
+          </div>
+        </div>
+
+        <!-- iOS manual steps (tampil hanya di Safari iOS) -->
+        <div id="ios-steps">
+          <p>Cara pasang di iPhone / iPad:</p>
+          <div class="ios-step"><div class="num">1</div> Ketuk tombol <strong>Bagikan</strong> (kotak dengan panah ↑) di browser</div>
+          <div class="ios-step"><div class="num">2</div> Gulir & pilih <strong>"Tambah ke Layar Utama"</strong></div>
+          <div class="ios-step"><div class="num">3</div> Ketuk <strong>Tambah</strong> — selesai!</div>
+        </div>
+
+        <button id="btn-install-now">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v13m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+          Pasang Sekarang
+        </button>
+        <button id="btn-skip">Nanti saja, lanjut ke login</button>
+      </div>
+    </div>
+
+    <div class="judul-form">
+      <h2>Selamat Datang!</h2>
+      <p>Pilih peranmu untuk masuk ke kelas.</p>
+    </div>
+
+    <!-- Tab Pilihan -->
+    <div class="tab-switcher">
+      <button class="tab-btn aktif" onclick="gantiTab('siswa')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+        </svg>
+        Siswa
+      </button>
+      <button class="tab-btn" onclick="gantiTab('guru')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+        Guru
+      </button>
+    </div>
+
+    <!-- Form Login Siswa -->
+    <div id="form-siswa" class="form-login tampil">
+      <div id="pesan-siswa" class="pesan-error"></div>
+      <div class="input-grup">
+        <label for="nama-siswa">Nama Lengkap</label>
+        <input type="text" id="nama-siswa" class="input-field"
+          placeholder="Contoh: Budi Santoso"
+          onkeydown="if(event.key==='Enter') loginSiswa()" />
+      </div>
+      <div class="input-grup">
+        <label for="kelas-siswa">Kelas</label>
+        <select id="kelas-siswa" class="input-field">
+          <option value="">— Pilih Kelas —</option>
+          <option value="Kelas 1">Kelas 1</option>
+          <option value="Kelas 2">Kelas 2</option>
+          <option value="Kelas 3">Kelas 3</option>
+          <option value="Kelas 4">Kelas 4</option>
+          <option value="Kelas 5">Kelas 5</option>
+          <option value="Kelas 6">Kelas 6</option>
+        </select>
+      </div>
+      <button class="btn btn-utama btn-masuk btn-besar" onclick="loginSiswa()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="13 17 18 12 13 7"/><path d="M6 12h12"/><path d="M3 5v14a2 2 0 002 2h1"/>
+        </svg>
+        Masuk ke Kelas
+      </button>
+    </div>
+
+    <!-- Form Login Guru -->
+    <div id="form-guru" class="form-login">
+      <div id="pesan-guru" class="pesan-error"></div>
+      <div class="input-grup">
+        <label for="kelas-guru">Pilih Kelas yang Diampu</label>
+        <select id="kelas-guru" class="input-field">
+          <option value="">— Pilih Kelas —</option>
+          <option value="kelas 1">Kelas 1</option>
+          <option value="kelas 2">Kelas 2</option>
+          <option value="kelas 3">Kelas 3</option>
+          <option value="kelas 4">Kelas 4</option>
+          <option value="kelas 5">Kelas 5</option>
+          <option value="kelas 6">Kelas 6</option>
+        </select>
+      </div>
+      <div class="input-grup">
+        <label for="password-guru">Password Guru</label>
+        <input type="password" id="password-guru" class="input-field"
+          placeholder="Masukkan password"
+          onkeydown="if(event.key==='Enter') loginGuru()" />
+      </div>
+      <button class="btn btn-besar btn-guru-masuk" onclick="loginGuru()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+        </svg>
+        Masuk sebagai Guru
+      </button>
+    </div>
+
+    <div class="footer-login">
+      <p>© 2025 ZooMimanu — Platform Belajar Daring Sekolah</p>
+    </div>
+  </div>
+
+  <script>
+    // ---- Tab switcher ----
+    function gantiTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+        btn.classList.toggle('aktif', (tab === 'siswa' && i === 0) || (tab === 'guru' && i === 1));
+      });
+      document.getElementById('form-siswa').classList.toggle('tampil', tab === 'siswa');
+      document.getElementById('form-guru').classList.toggle('tampil', tab === 'guru');
+    }
+
+    function tampilPesan(elId, pesan) {
+      const el = document.getElementById(elId);
+      el.textContent = pesan;
+      el.style.display = 'block';
+    }
+
+    async function loginSiswa() {
+      const nama = document.getElementById('nama-siswa').value.trim();
+      const kelas = document.getElementById('kelas-siswa').value;
+      if (!nama) return tampilPesan('pesan-siswa', '❌ Nama tidak boleh kosong!');
+      if (!kelas) return tampilPesan('pesan-siswa', '❌ Pilih kelas terlebih dahulu!');
+      try {
+        const resp = await fetch('/api/login/siswa', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nama, kelas })
+        });
+        const hasil = await resp.json();
+        if (hasil.sukses) {
+          localStorage.setItem('penggunaSaatIni', JSON.stringify(hasil.data));
+          window.location.href = '/siswa';
+        } else {
+          tampilPesan('pesan-siswa', '❌ ' + hasil.pesan);
+        }
+      } catch (e) {
+        tampilPesan('pesan-siswa', '❌ Tidak dapat terhubung ke server.');
+      }
+    }
+
+    async function loginGuru() {
+      const username = document.getElementById('kelas-guru').value;
+      const password = document.getElementById('password-guru').value;
+      if (!username) return tampilPesan('pesan-guru', '❌ Pilih kelas terlebih dahulu!');
+      if (!password) return tampilPesan('pesan-guru', '❌ Password tidak boleh kosong!');
+      try {
+        const resp = await fetch('/api/login/guru', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const hasil = await resp.json();
+        if (hasil.sukses) {
+          localStorage.setItem('penggunaSaatIni', JSON.stringify(hasil.data));
+          window.location.href = '/guru';
+        } else {
+          tampilPesan('pesan-guru', '❌ ' + hasil.pesan);
+        }
+      } catch (e) {
+        tampilPesan('pesan-guru', '❌ Tidak dapat terhubung ke server.');
+      }
+    }
+
+    // Auto-redirect if already logged in
+    const pengguna = localStorage.getItem('penggunaSaatIni');
+    if (pengguna) {
+      const data = JSON.parse(pengguna);
+      if (data.role === 'guru') window.location.href = '/guru';
+      else if (data.role === 'siswa') window.location.href = '/siswa';
+    }
+
+    // Pre-select role from URL
+    const params = new URLSearchParams(location.search);
+    if (params.get('role') === 'guru') gantiTab('guru');
+
+    // ---- PWA Service Worker ----
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(console.error);
+    }
+
+    // ===== PWA AUTO-INSTALL MODAL =====
+    let deferredPrompt = null;
+    const overlay   = document.getElementById('pwa-overlay');
+    const btnInstall = document.getElementById('btn-install-now');
+    const btnSkip    = document.getElementById('btn-skip');
+    const iosSteps   = document.getElementById('ios-steps');
+
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches
+                            || navigator.standalone;
+
+    function showModal() {
+      overlay.classList.add('tampil');
+    }
+    function hideModal() {
+      overlay.classList.remove('tampil');
+      sessionStorage.setItem('pwa-dismissed', '1');
+    }
+
+    // Jangan tampilkan kalau sudah terinstall atau sudah pernah dismiss
+    if (!isInStandaloneMode && !sessionStorage.getItem('pwa-dismissed')) {
+
+      if (isIOS) {
+        // iOS Safari: tampilkan petunjuk manual
+        iosSteps.style.display = 'block';
+        btnInstall.style.display = 'none';
+        // Tampilkan modal setelah 800ms agar halaman sudah render
+        setTimeout(showModal, 800);
+
+      } else {
+        // Android / Desktop Chrome: tunggu beforeinstallprompt
+        window.addEventListener('beforeinstallprompt', e => {
+          e.preventDefault();
+          deferredPrompt = e;
+          // Tampilkan modal segera
+          setTimeout(showModal, 800);
+        });
+      }
+    }
+
+    // Tombol Pasang
+    btnInstall.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      hideModal();
+    });
+
+    // Tombol Skip
+    btnSkip.addEventListener('click', hideModal);
+
+    // Klik luar modal = tutup
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) hideModal();
+    });
+  </script>
+</body>
+</html>

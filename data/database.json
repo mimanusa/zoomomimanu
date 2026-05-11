@@ -1,0 +1,75 @@
+{
+  "guru": [
+    {
+      "id": "guru001",
+      "username": "kelas 1",
+      "passwordPlain": "guru123",
+      "namaGuru": "Guru Kelas 1",
+      "kelas": "Kelas 1",
+      "mataPelajaran": "Semua Mata Pelajaran"
+    },
+    {
+      "id": "guru002",
+      "username": "kelas 2",
+      "passwordPlain": "guru123",
+      "namaGuru": "Guru Kelas 2",
+      "kelas": "Kelas 2",
+      "mataPelajaran": "Semua Mata Pelajaran"
+    },
+    {
+      "id": "guru003",
+      "username": "kelas 3",
+      "passwordPlain": "guru123",
+      "namaGuru": "Guru Kelas 3",
+      "kelas": "Kelas 3",
+      "mataPelajaran": "Semua Mata Pelajaran"
+    },
+    {
+      "id": "guru004",
+      "username": "kelas 4",
+      "passwordPlain": "guru123",
+      "namaGuru": "Guru Kelas 4",
+      "kelas": "Kelas 4",
+      "mataPelajaran": "Semua Mata Pelajaran"
+    },
+    {
+      "id": "guru005",
+      "username": "kelas 5",
+      "passwordPlain": "guru123",
+      "namaGuru": "Guru Kelas 5",
+      "kelas": "Kelas 5",
+      "mataPelajaran": "Semua Mata Pelajaran"
+    },
+    {
+      "id": "guru006",
+      "username": "kelas 6",
+      "passwordPlain": "guru123",
+      "namaGuru": "Guru Kelas 6",
+      "kelas": "Kelas 6",
+      "mataPelajaran": "Semua Mata Pelajaran"
+    }
+  ],
+  "siswa": [
+    {
+      "id": "9bad6585-143e-456b-8004-427cce3edfc8",
+      "nama": "Budi",
+      "kelas": "Kelas 6",
+      "bergabungPada": "2026-05-11T01:25:04.008Z"
+    }
+  ],
+  "ruangan": [
+    {
+      "id": "f2293b98-bb98-4acf-9468-30ed301c8108",
+      "kode": "KELAS6-09KF",
+      "guruId": "guru006",
+      "namaGuru": "Guru Kelas 6",
+      "kelas": "Kelas 6",
+      "judul": "Kelas 6",
+      "aktif": true,
+      "dibuatPada": "2026-05-11T01:24:23.464Z",
+      "peserta": []
+    }
+  ],
+  "tugas": [],
+  "jawaban": []
+}
