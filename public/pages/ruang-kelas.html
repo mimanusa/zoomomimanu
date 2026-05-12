@@ -752,9 +752,13 @@ function hubungkanSocket() {
   });
 
   socket.on('daftar-pengguna-online', (daftar) => {
+    // Hanya tambahkan peserta ke daftar — koneksi WebRTC akan dimulai
+    // oleh pengguna yang sudah ada di ruangan (via pengguna-bergabung)
     daftar.forEach(pengguna => {
       if (pengguna.socketId !== socket.id) {
         tambahPeserta(pengguna.socketId, pengguna.namaUser, pengguna.role);
+        // Kirim offer ke pengguna yang sudah ada — kita yang baru masuk
+        // bertanggung jawab menginisiasi koneksi ke semua yang sudah ada
         mulaiWebRTC(pengguna.socketId, true);
       }
     });
@@ -763,6 +767,11 @@ function hubungkanSocket() {
   socket.on('pengguna-bergabung', ({ socketId, namaUser, role }) => {
     tambahPeserta(socketId, namaUser, role);
     tambahPesanChat('sistem', `${namaUser} bergabung ke ruangan`, '');
+    // Pengguna baru bergabung — kita (yang sudah ada) kirim offer ke mereka
+    // agar koneksi video terbentuk dari kedua sisi
+    if (!koneksiPeer[socketId]) {
+      setTimeout(() => mulaiWebRTC(socketId, true), 500);
+    }
   });
 
   socket.on('pengguna-keluar', ({ socketId, namaUser }) => {
@@ -771,8 +780,16 @@ function hubungkanSocket() {
     if (koneksiPeer[socketId]) { koneksiPeer[socketId].close(); delete koneksiPeer[socketId]; }
   });
 
-  // WebRTC
-  socket.on('webrtc-offer', async ({ dariSocketId, offer }) => await terimaOffer(dariSocketId, offer));
+  // WebRTC — terima offer dari pengguna lain
+  socket.on('webrtc-offer', async ({ dariSocketId, offer }) => {
+    // Jika sudah ada koneksi stabil ke socket ini, abaikan offer duplikat
+    const existing = koneksiPeer[dariSocketId];
+    if (existing && (existing.signalingState === 'stable' || existing.connectionState === 'connected')) {
+      console.log('WebRTC: abaikan offer duplikat dari', dariSocketId);
+      return;
+    }
+    await terimaOffer(dariSocketId, offer);
+  });
   socket.on('webrtc-answer', async ({ dariSocketId, answer }) => {
     if (koneksiPeer[dariSocketId]) await koneksiPeer[dariSocketId].setRemoteDescription(answer);
   });
@@ -827,11 +844,17 @@ function hubungkanSocket() {
   });
 
   // ---- AUTO REJOIN setelah reconnect ----
-  // Jika socket sempat putus (misal saat emit presentasi besar),
-  // otomatis rejoin ruang tanpa perlu refresh halaman
   socket.on('connect', () => {
     if (ruangSaatIni && penggunaSaatIni) {
       const namaUser = penggunaSaatIni.namaGuru || penggunaSaatIni.nama;
+
+      // Bersihkan semua koneksi peer lama yang sudah tidak valid
+      Object.keys(koneksiPeer).forEach(sid => {
+        try { koneksiPeer[sid].close(); } catch(e) {}
+        hapusVideoRemote(sid);
+        delete koneksiPeer[sid];
+      });
+
       socket.emit('bergabung-ruang', {
         ruangId: ruangSaatIni.id,
         userId: penggunaSaatIni.id,
@@ -871,6 +894,12 @@ async function ambilWebRTCConfig() {
 }
 
 async function mulaiWebRTC(targetSocketId, kirimOffer) {
+  // Tutup koneksi lama jika ada
+  if (koneksiPeer[targetSocketId]) {
+    try { koneksiPeer[targetSocketId].close(); } catch(e) {}
+    delete koneksiPeer[targetSocketId];
+  }
+
   const config = await ambilWebRTCConfig();
   const pc = new RTCPeerConnection(config);
   koneksiPeer[targetSocketId] = pc;
@@ -978,12 +1007,6 @@ function hapusVideoRemote(socketId) {
     if (el._checkInterval) clearInterval(el._checkInterval);
     el.remove();
   }
-  updateGridVideo();
-}
-
-function hapusVideoRemote(socketId) {
-  const el = document.getElementById(`video-${socketId}`);
-  if (el) el.remove();
   updateGridVideo();
 }
 
