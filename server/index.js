@@ -76,9 +76,12 @@ app.post('/api/login/guru', (req, res) => {
   if (!guru) return res.status(401).json({ sukses: false, pesan: 'Kelas tidak ditemukan' });
   if (password !== guru.passwordPlain) return res.status(401).json({ sukses: false, pesan: 'Password salah' });
 
+  // Buat/ambil ruang otomatis untuk kelas ini
+  const ruang = getOrBuatRuang(guru.kelas, guru.id, guru.namaGuru);
+
   res.json({
     sukses: true,
-    data: { id: guru.id, namaGuru: guru.namaGuru, kelas: guru.kelas, mataPelajaran: guru.mataPelajaran, role: 'guru' }
+    data: { id: guru.id, namaGuru: guru.namaGuru, kelas: guru.kelas, mataPelajaran: guru.mataPelajaran, role: 'guru', ruang }
   });
 });
 
@@ -95,11 +98,37 @@ app.post('/api/login/siswa', (req, res) => {
     db.siswa.push(siswa);
   }
 
-  res.json({ sukses: true, data: { ...siswa, role: 'siswa' } });
+  // Cari ruang aktif untuk kelas siswa ini
+  const ruang = db.ruangan.find(r => r.kelas.toLowerCase() === kelas.toLowerCase() && r.aktif) || null;
+
+  res.json({ sukses: true, data: { ...siswa, role: 'siswa', ruang } });
 });
 
 // =====================================================
-// API: BUAT RUANG KELAS
+// API: RUANG OTOMATIS PER KELAS
+// Saat guru login, ruang dibuat otomatis berdasarkan kelas.
+// Tidak perlu buat manual lagi.
+// =====================================================
+function getOrBuatRuang(kelas, guruId, namaGuru) {
+  let ruang = db.ruangan.find(r => r.kelas === kelas && r.aktif);
+  if (!ruang) {
+    const kodeRuang = kelas.replace(/\s/g, '').toUpperCase();
+    ruang = {
+      id: 'ruang-' + kelas.replace(/\s/g, '-').toLowerCase(),
+      kode: kodeRuang,
+      guruId, namaGuru, kelas,
+      judul: kelas,
+      aktif: true,
+      dibuatPada: new Date().toISOString(),
+      peserta: []
+    };
+    db.ruangan.push(ruang);
+  }
+  return ruang;
+}
+
+// =====================================================
+// API: BUAT RUANG KELAS (tetap ada untuk kompatibilitas)
 // =====================================================
 app.post('/api/ruang/buat', (req, res) => {
   const { guruId, namaGuru, kelas, judul } = req.body;
