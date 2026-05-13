@@ -745,11 +745,8 @@ function hubungkanSocket() {
   const namaUser = penggunaSaatIni.namaGuru || penggunaSaatIni.nama;
   const role = penggunaSaatIni.role;
 
-  socket.emit('bergabung-ruang', {
-    ruangId: ruangSaatIni.id,
-    userId: penggunaSaatIni.id,
-    namaUser, role
-  });
+  // FIX: daftarkan setelah connect terjadi (ada duplikat emit di bawah di reconnect)
+  // emit langsung di sini dihapus — sekarang hanya via event 'connect'
 
   socket.on('daftar-pengguna-online', (daftar) => {
     // Hanya tambahkan peserta ke daftar — koneksi WebRTC akan dimulai
