@@ -1074,6 +1074,8 @@ function updateGridVideo() {
 // PESERTA
 // =====================================================
 function tambahPeserta(socketId, nama, role) {
+  // Cegah duplikat
+  if (document.getElementById(`peserta-${socketId}`)) return;
   const container = document.getElementById('daftar-peserta');
   const div = document.createElement('div');
   div.className = 'item-peserta';
@@ -1101,8 +1103,9 @@ function kirimChat() {
   const pesan = input.value.trim();
   if (!pesan) return;
   const namaUser = penggunaSaatIni.namaGuru || penggunaSaatIni.nama;
+  // Hanya emit — server broadcast ke semua termasuk pengirim
+  // jangan tambah lokal dulu, tunggu event pesan-chat dari server
   socket.emit('kirim-chat', { ruangId: ruangSaatIni.id, namaUser, pesan, role: penggunaSaatIni.role });
-  tambahPesanChat(namaUser, pesan, penggunaSaatIni.role, new Date().toLocaleTimeString('id-ID'));
   input.value = '';
 }
 
