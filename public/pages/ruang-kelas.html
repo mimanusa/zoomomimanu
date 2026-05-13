@@ -735,40 +735,52 @@ function toggleCam() {
 // =====================================================
 function hubungkanSocket() {
   socket = io({
-    // Naikkan timeout agar tidak disconnect saat emit besar (presentasi)
     ackTimeout: 15000,
     retries: 3,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
     timeout: 20000
   });
-  const namaUser = penggunaSaatIni.namaGuru || penggunaSaatIni.nama;
-  const role = penggunaSaatIni.role;
 
-  // FIX: daftarkan setelah connect terjadi (ada duplikat emit di bawah di reconnect)
-  // emit langsung di sini dihapus — sekarang hanya via event 'connect'
+  // ---- CONNECT: selalu emit bergabung-ruang di sini ----
+  // Ini menangani BOTH koneksi pertama DAN reconnect
+  socket.on('connect', () => {
+    // Bersihkan peer connections lama
+    Object.keys(koneksiPeer).forEach(sid => {
+      try { koneksiPeer[sid].close(); } catch(e) {}
+      hapusVideoRemote(sid);
+      delete koneksiPeer[sid];
+    });
+    const namaUser = penggunaSaatIni.namaGuru || penggunaSaatIni.nama;
+    socket.emit('bergabung-ruang', {
+      ruangId: ruangSaatIni.id,
+      userId: penggunaSaatIni.id,
+      namaUser,
+      role: penggunaSaatIni.role
+    });
+    console.log('Socket connected, bergabung-ruang dikirim:', ruangSaatIni.id);
+  });
 
+  // Daftar semua yang sudah ada di ruang saat kita masuk
+  // KITA yang kirim offer ke mereka (karena kita yang baru datang)
   socket.on('daftar-pengguna-online', (daftar) => {
-    // Hanya tambahkan peserta ke daftar — koneksi WebRTC akan dimulai
-    // oleh pengguna yang sudah ada di ruangan (via pengguna-bergabung)
     daftar.forEach(pengguna => {
       if (pengguna.socketId !== socket.id) {
         tambahPeserta(pengguna.socketId, pengguna.namaUser, pengguna.role);
-        // Kirim offer ke pengguna yang sudah ada — kita yang baru masuk
-        // bertanggung jawab menginisiasi koneksi ke semua yang sudah ada
-        mulaiWebRTC(pengguna.socketId, true);
+        // Delay kecil agar stream lokal sudah siap
+        setTimeout(() => mulaiWebRTC(pengguna.socketId, true), 300);
       }
     });
   });
 
+  // Pengguna lain masuk setelah kita — MEREKA yang kirim offer ke kita
+  // Kita TIDAK kirim offer, cukup tunggu offer dari mereka via webrtc-offer
+  // (menghindari offer collision dari dua sisi)
   socket.on('pengguna-bergabung', ({ socketId, namaUser, role }) => {
     tambahPeserta(socketId, namaUser, role);
     tambahPesanChat('sistem', `${namaUser} bergabung ke ruangan`, '');
-    // Pengguna baru bergabung — kita (yang sudah ada) kirim offer ke mereka
-    // agar koneksi video terbentuk dari kedua sisi
-    if (!koneksiPeer[socketId]) {
-      setTimeout(() => mulaiWebRTC(socketId, true), 500);
-    }
+    // Tidak kirim offer dari sini — biarkan pendatang baru yang kirim offer
+    // setelah mereka terima daftar-pengguna-online
   });
 
   socket.on('pengguna-keluar', ({ socketId, namaUser }) => {
@@ -777,22 +789,25 @@ function hubungkanSocket() {
     if (koneksiPeer[socketId]) { koneksiPeer[socketId].close(); delete koneksiPeer[socketId]; }
   });
 
-  // WebRTC — terima offer dari pengguna lain
+  // WebRTC signaling
   socket.on('webrtc-offer', async ({ dariSocketId, offer }) => {
-    // Jika sudah ada koneksi stabil ke socket ini, abaikan offer duplikat
-    const existing = koneksiPeer[dariSocketId];
-    if (existing && (existing.signalingState === 'stable' || existing.connectionState === 'connected')) {
-      console.log('WebRTC: abaikan offer duplikat dari', dariSocketId);
-      return;
-    }
+    console.log('Terima offer dari', dariSocketId);
     await terimaOffer(dariSocketId, offer);
   });
+
   socket.on('webrtc-answer', async ({ dariSocketId, answer }) => {
-    if (koneksiPeer[dariSocketId]) await koneksiPeer[dariSocketId].setRemoteDescription(answer);
+    console.log('Terima answer dari', dariSocketId);
+    const pc = koneksiPeer[dariSocketId];
+    if (pc && pc.signalingState === 'have-local-offer') {
+      try { await pc.setRemoteDescription(new RTCSessionDescription(answer)); } catch(e) { console.error('setRemoteDescription answer gagal:', e); }
+    }
   });
+
   socket.on('webrtc-ice-candidate', async ({ dariSocketId, candidate }) => {
-    if (koneksiPeer[dariSocketId] && candidate)
-      try { await koneksiPeer[dariSocketId].addIceCandidate(candidate); } catch(e) {}
+    const pc = koneksiPeer[dariSocketId];
+    if (pc && candidate) {
+      try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch(e) {}
+    }
   });
 
   // Chat
@@ -840,27 +855,7 @@ function hubungkanSocket() {
     }
   });
 
-  // ---- AUTO REJOIN setelah reconnect ----
-  socket.on('connect', () => {
-    if (ruangSaatIni && penggunaSaatIni) {
-      const namaUser = penggunaSaatIni.namaGuru || penggunaSaatIni.nama;
-
-      // Bersihkan semua koneksi peer lama yang sudah tidak valid
-      Object.keys(koneksiPeer).forEach(sid => {
-        try { koneksiPeer[sid].close(); } catch(e) {}
-        hapusVideoRemote(sid);
-        delete koneksiPeer[sid];
-      });
-
-      socket.emit('bergabung-ruang', {
-        ruangId: ruangSaatIni.id,
-        userId: penggunaSaatIni.id,
-        namaUser,
-        role: penggunaSaatIni.role
-      });
-      tampilNotif('🔄 Terhubung kembali ke ruang');
-    }
-  });
+  // disconnect / error handlers
 
   socket.on('disconnect', (reason) => {
     console.warn('Socket disconnect:', reason);
@@ -891,9 +886,10 @@ async function ambilWebRTCConfig() {
 }
 
 async function mulaiWebRTC(targetSocketId, kirimOffer) {
-  // Tutup koneksi lama jika ada
+  // Tutup koneksi lama
   if (koneksiPeer[targetSocketId]) {
     try { koneksiPeer[targetSocketId].close(); } catch(e) {}
+    hapusVideoRemote(targetSocketId);
     delete koneksiPeer[targetSocketId];
   }
 
@@ -901,45 +897,99 @@ async function mulaiWebRTC(targetSocketId, kirimOffer) {
   const pc = new RTCPeerConnection(config);
   koneksiPeer[targetSocketId] = pc;
 
-  if (streamLokal) streamLokal.getTracks().forEach(track => pc.addTrack(track, streamLokal));
+  // Tambahkan semua track stream lokal
+  if (streamLokal) {
+    streamLokal.getTracks().forEach(track => {
+      pc.addTrack(track, streamLokal);
+    });
+  }
 
-  pc.ontrack = (event) => tampilVideoRemote(targetSocketId, event.streams[0]);
-  pc.onicecandidate = (event) => {
-    if (event.candidate)
-      socket.emit('webrtc-ice-candidate', { tujuanSocketId: targetSocketId, candidate: event.candidate });
+  pc.ontrack = (event) => {
+    console.log('ontrack dari', targetSocketId, event.streams);
+    if (event.streams && event.streams[0]) {
+      tampilVideoRemote(targetSocketId, event.streams[0]);
+    }
   };
+
+  pc.onicecandidate = (event) => {
+    if (event.candidate) {
+      socket.emit('webrtc-ice-candidate', { tujuanSocketId: targetSocketId, candidate: event.candidate });
+    }
+  };
+
+  pc.oniceconnectionstatechange = () => {
+    console.log(`ICE [${targetSocketId}]: ${pc.iceConnectionState}`);
+    if (pc.iceConnectionState === 'failed') {
+      console.warn('ICE failed, restart ICE...');
+      if (pc.restartIce) pc.restartIce();
+    }
+  };
+
   pc.onconnectionstatechange = () => {
-    console.log(`WebRTC [${targetSocketId}] state: ${pc.connectionState}`);
+    console.log(`WebRTC [${targetSocketId}]: ${pc.connectionState}`);
     if (pc.connectionState === 'failed') {
-      // Coba restart ICE dulu
-      if (pc.restartIce) { pc.restartIce(); }
-      else { hapusVideoRemote(targetSocketId); delete koneksiPeer[targetSocketId]; }
-    } else if (pc.connectionState === 'disconnected') {
-      // Tunggu 4 detik, kalau masih disconnected, reconnect
+      hapusVideoRemote(targetSocketId);
+      if (koneksiPeer[targetSocketId] === pc) delete koneksiPeer[targetSocketId];
+      // Coba sambung ulang setelah 2 detik
       setTimeout(() => {
-        if (koneksiPeer[targetSocketId]?.connectionState === 'disconnected') {
-          hapusVideoRemote(targetSocketId);
-          delete koneksiPeer[targetSocketId];
-          mulaiWebRTC(targetSocketId, true);
-        }
-      }, 4000);
+        if (!koneksiPeer[targetSocketId]) mulaiWebRTC(targetSocketId, true);
+      }, 2000);
     }
   };
 
   if (kirimOffer) {
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    socket.emit('webrtc-offer', { tujuanSocketId: targetSocketId, offer });
+    try {
+      const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
+      await pc.setLocalDescription(offer);
+      socket.emit('webrtc-offer', { tujuanSocketId: targetSocketId, offer });
+      console.log('Offer dikirim ke', targetSocketId);
+    } catch(e) { console.error('Gagal buat offer:', e); }
   }
 }
 
 async function terimaOffer(dariSocketId, offer) {
-  await mulaiWebRTC(dariSocketId, false);
-  const pc = koneksiPeer[dariSocketId];
-  await pc.setRemoteDescription(offer);
-  const answer = await pc.createAnswer();
-  await pc.setLocalDescription(answer);
-  socket.emit('webrtc-answer', { tujuanSocketId: dariSocketId, answer });
+  // Tutup koneksi lama jika ada
+  if (koneksiPeer[dariSocketId]) {
+    try { koneksiPeer[dariSocketId].close(); } catch(e) {}
+    hapusVideoRemote(dariSocketId);
+    delete koneksiPeer[dariSocketId];
+  }
+
+  const config = await ambilWebRTCConfig();
+  const pc = new RTCPeerConnection(config);
+  koneksiPeer[dariSocketId] = pc;
+
+  // Tambahkan track lokal
+  if (streamLokal) {
+    streamLokal.getTracks().forEach(track => {
+      pc.addTrack(track, streamLokal);
+    });
+  }
+
+  pc.ontrack = (event) => {
+    console.log('ontrack (answer side) dari', dariSocketId, event.streams);
+    if (event.streams && event.streams[0]) {
+      tampilVideoRemote(dariSocketId, event.streams[0]);
+    }
+  };
+
+  pc.onicecandidate = (event) => {
+    if (event.candidate) {
+      socket.emit('webrtc-ice-candidate', { tujuanSocketId: dariSocketId, candidate: event.candidate });
+    }
+  };
+
+  pc.oniceconnectionstatechange = () => {
+    console.log(`ICE answer [${dariSocketId}]: ${pc.iceConnectionState}`);
+  };
+
+  try {
+    await pc.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    socket.emit('webrtc-answer', { tujuanSocketId: dariSocketId, answer });
+    console.log('Answer dikirim ke', dariSocketId);
+  } catch(e) { console.error('Gagal terima offer:', e); }
 }
 
 function tampilVideoRemote(socketId, stream) {
