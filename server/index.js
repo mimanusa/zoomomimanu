@@ -29,15 +29,12 @@ app.use(express.static(path.join(__dirname, '../public')));
 // =====================================================
 let db = {
   guru: [
-    {
-      id: 'guru-001',
-      username: 'guru1',
-      passwordPlain: 'guru123',
-      namaGuru: 'Bapak/Ibu Guru',
-      kelas: '7A',
-      mataPelajaran: 'Umum'
-    }
-    // Tambah guru lain lewat POST /api/setup/guru
+    { id: 'guru-kelas1', username: 'Kelas 1', passwordPlain: 'guru123', namaGuru: 'Guru Kelas 1', kelas: 'Kelas 1', mataPelajaran: 'Umum' },
+    { id: 'guru-kelas2', username: 'Kelas 2', passwordPlain: 'guru123', namaGuru: 'Guru Kelas 2', kelas: 'Kelas 2', mataPelajaran: 'Umum' },
+    { id: 'guru-kelas3', username: 'Kelas 3', passwordPlain: 'guru123', namaGuru: 'Guru Kelas 3', kelas: 'Kelas 3', mataPelajaran: 'Umum' },
+    { id: 'guru-kelas4', username: 'Kelas 4', passwordPlain: 'guru123', namaGuru: 'Guru Kelas 4', kelas: 'Kelas 4', mataPelajaran: 'Umum' },
+    { id: 'guru-kelas5', username: 'Kelas 5', passwordPlain: 'guru123', namaGuru: 'Guru Kelas 5', kelas: 'Kelas 5', mataPelajaran: 'Umum' },
+    { id: 'guru-kelas6', username: 'Kelas 6', passwordPlain: 'guru123', namaGuru: 'Guru Kelas 6', kelas: 'Kelas 6', mataPelajaran: 'Umum' }
   ],
   siswa: [],
   ruangan: [],
@@ -74,8 +71,9 @@ app.get('/ruang/:id', (req, res) => res.sendFile(path.join(__dirname, '../public
 // =====================================================
 app.post('/api/login/guru', (req, res) => {
   const { username, password } = req.body;
-  const guru = db.guru.find(g => g.username === username);
-  if (!guru) return res.status(401).json({ sukses: false, pesan: 'Username tidak ditemukan' });
+  // Case-insensitive: "kelas 1" == "Kelas 1"
+  const guru = db.guru.find(g => g.username.toLowerCase() === (username || '').toLowerCase());
+  if (!guru) return res.status(401).json({ sukses: false, pesan: 'Kelas tidak ditemukan' });
   if (password !== guru.passwordPlain) return res.status(401).json({ sukses: false, pesan: 'Password salah' });
 
   res.json({
