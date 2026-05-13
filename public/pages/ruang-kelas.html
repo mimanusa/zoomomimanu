@@ -871,6 +871,36 @@ function hubungkanSocket() {
 }
 
 // =====================================================
+// DEBUG: ICE DIAGNOSTICS — hapus setelah berhasil
+// =====================================================
+function debugICE(pc, label) {
+  pc.addEventListener('icegatheringstatechange', () => {
+    console.log(`[ICE ${label}] gathering: ${pc.iceGatheringState}`);
+    if (pc.iceGatheringState === 'complete') {
+      // Cek apakah ada relay candidate (TURN) 
+      pc.getStats().then(stats => {
+        let adaRelay = false;
+        let adaHost = false;
+        let adaSrflx = false;
+        stats.forEach(s => {
+          if (s.type === 'local-candidate') {
+            console.log(`[ICE candidate] type=${s.candidateType} addr=${s.address} proto=${s.protocol}`);
+            if (s.candidateType === 'relay') adaRelay = true;
+            if (s.candidateType === 'host') adaHost = true;
+            if (s.candidateType === 'srflx') adaSrflx = true;
+          }
+        });
+        console.log(`[ICE summary ${label}] host=${adaHost} srflx=${adaSrflx} relay=${adaRelay}`);
+        if (!adaRelay) {
+          console.warn('⚠️ TIDAK ADA RELAY CANDIDATE — TURN server tidak aktif!');
+          tampilNotif('⚠️ TURN server tidak aktif — video mungkin tidak terhubung antar jaringan');
+        }
+      });
+    }
+  });
+}
+
+// =====================================================
 // WebRTC
 // =====================================================
 let webRTCConfig = null;
@@ -896,6 +926,7 @@ async function mulaiWebRTC(targetSocketId, kirimOffer) {
   const config = await ambilWebRTCConfig();
   const pc = new RTCPeerConnection(config);
   koneksiPeer[targetSocketId] = pc;
+  debugICE(pc, 'offer->' + targetSocketId.slice(-4));
 
   // Tambahkan semua track stream lokal
   if (streamLokal) {
@@ -958,6 +989,7 @@ async function terimaOffer(dariSocketId, offer) {
   const config = await ambilWebRTCConfig();
   const pc = new RTCPeerConnection(config);
   koneksiPeer[dariSocketId] = pc;
+  debugICE(pc, 'answer->' + dariSocketId.slice(-4));
 
   // Tambahkan track lokal
   if (streamLokal) {
