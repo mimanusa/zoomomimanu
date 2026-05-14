@@ -744,13 +744,20 @@ function hubungkanSocket() {
 
   // ---- CONNECT: selalu emit bergabung-ruang di sini ----
   // Ini menangani BOTH koneksi pertama DAN reconnect
+  let sudahBergabung = false;
   socket.on('connect', () => {
-    // Bersihkan peer connections lama
-    Object.keys(koneksiPeer).forEach(sid => {
-      try { koneksiPeer[sid].close(); } catch(e) {}
-      hapusVideoRemote(sid);
-      delete koneksiPeer[sid];
-    });
+    console.log('[Socket connect] id:', socket.id, 'sudahBergabung:', sudahBergabung);
+    
+    // Kalau ini reconnect (sudah bergabung sebelumnya), bersihkan peer lama
+    if (sudahBergabung) {
+      Object.keys(koneksiPeer).forEach(sid => {
+        try { koneksiPeer[sid].close(); } catch(e) {}
+        hapusVideoRemote(sid);
+        delete koneksiPeer[sid];
+      });
+    }
+    sudahBergabung = true;
+    
     const namaUser = penggunaSaatIni.namaGuru || penggunaSaatIni.nama;
     socket.emit('bergabung-ruang', {
       ruangId: ruangSaatIni.id,
@@ -758,7 +765,7 @@ function hubungkanSocket() {
       namaUser,
       role: penggunaSaatIni.role
     });
-    console.log('Socket connected, bergabung-ruang dikirim:', ruangSaatIni.id);
+    console.log('[bergabung-ruang dikirim]', ruangSaatIni.id);
   });
 
   // Daftar semua yang sudah ada di ruang saat kita masuk
@@ -767,8 +774,10 @@ function hubungkanSocket() {
     daftar.forEach(pengguna => {
       if (pengguna.socketId !== socket.id) {
         tambahPeserta(pengguna.socketId, pengguna.namaUser, pengguna.role);
-        // Delay kecil agar stream lokal sudah siap
-        setTimeout(() => mulaiWebRTC(pengguna.socketId, true), 300);
+        // Cek: jangan kirim offer kalau koneksi sudah connected
+        const existing = koneksiPeer[pengguna.socketId];
+        if (existing && existing.connectionState === 'connected') return;
+        setTimeout(() => mulaiWebRTC(pengguna.socketId, true), 500);
       }
     });
   });
@@ -829,17 +838,23 @@ function hubungkanSocket() {
 
   // Presentasi (diterima siswa & guru lain)
   socket.on('presentasi-halaman', ({ imageData, halaman, totalHalaman, namaFile }) => {
-    // Otomatis buka tab presentasi
-    const tabPapan = document.querySelector('.tab-nav button:nth-child(2)');
-    gantiPanel('papan', tabPapan);
+    // Tampilkan canvas DULU sebelum gambar supaya dimensi sudah benar
+    tampilkanCanvasPresentasi(true);
     document.getElementById('badge-presentasi').style.display = 'inline';
-    setTimeout(() => gambarKeCanvas(imageData), 80);
+
+    // Buka tab presentasi
+    const tabPapan = document.querySelector('.tab-nav button:nth-child(2)');
+    if (tabPapan) gantiPanel('papan', tabPapan);
 
     // Update info siswa
-    document.getElementById('teks-info-siswa').textContent =
-      `📄 ${namaFile} — Halaman ${halaman}/${totalHalaman}`;
-    tampilNotif(`📄 ${namaFile} — ${halaman}/${totalHalaman}`);
-    tampilkanCanvasPresentasi(true);
+    if (document.getElementById('teks-info-siswa')) {
+      document.getElementById('teks-info-siswa').textContent =
+        `📄 ${namaFile || 'Presentasi'} — Halaman ${halaman}/${totalHalaman}`;
+    }
+    tampilNotif(`📄 ${namaFile || 'Presentasi'} — ${halaman}/${totalHalaman}`);
+
+    // Gambar ke canvas setelah layout stabil
+    setTimeout(() => gambarKeCanvas(imageData), 150);
   });
 
   socket.on('presentasi-selesai', () => {
@@ -1467,7 +1482,8 @@ function tampilkanCanvasPresentasi(tampil) {
       const canvas = document.getElementById('papan-canvas');
       const dc = document.getElementById('papan-draw-canvas');
       const w = wrapper;
-      if (canvas && w.clientWidth > 0) {
+      // Hanya set ukuran jika belum di-set (jangan clear canvas yang sudah ada gambar)
+      if (canvas && w.clientWidth > 0 && canvas.width < 100) {
         canvas.width = 1280;
         canvas.height = 720;
         dc.width = 1280;
