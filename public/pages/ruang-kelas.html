@@ -768,28 +768,37 @@ function hubungkanSocket() {
     console.log('[bergabung-ruang dikirim]', ruangSaatIni.id);
   });
 
-  // Daftar semua yang sudah ada di ruang saat kita masuk
-  // KITA yang kirim offer ke mereka (karena kita yang baru datang)
+  // ATURAN OFFER:
+  // - GURU selalu yang kirim offer ke semua
+  // - SISWA tidak pernah kirim offer, hanya terima dan jawab
+  // Ini mencegah "offer collision" di mana keduanya kirim offer bersamaan
+
   socket.on('daftar-pengguna-online', (daftar) => {
     daftar.forEach(pengguna => {
       if (pengguna.socketId !== socket.id) {
         tambahPeserta(pengguna.socketId, pengguna.namaUser, pengguna.role);
-        // Cek: jangan kirim offer kalau koneksi sudah connected
-        const existing = koneksiPeer[pengguna.socketId];
-        if (existing && existing.connectionState === 'connected') return;
-        setTimeout(() => mulaiWebRTC(pengguna.socketId, true), 500);
+        // Hanya guru yang kirim offer ke semua yang sudah ada
+        if (penggunaSaatIni.role === 'guru') {
+          const existing = koneksiPeer[pengguna.socketId];
+          if (existing && existing.connectionState === 'connected') return;
+          setTimeout(() => mulaiWebRTC(pengguna.socketId, true), 500);
+        }
+        // Siswa tidak kirim offer — tunggu offer dari guru
       }
     });
   });
 
-  // Pengguna lain masuk setelah kita — MEREKA yang kirim offer ke kita
-  // Kita TIDAK kirim offer, cukup tunggu offer dari mereka via webrtc-offer
-  // (menghindari offer collision dari dua sisi)
   socket.on('pengguna-bergabung', ({ socketId, namaUser, role }) => {
     tambahPeserta(socketId, namaUser, role);
     tambahPesanChat('sistem', `${namaUser} bergabung ke ruangan`, '');
-    // Tidak kirim offer dari sini — biarkan pendatang baru yang kirim offer
-    // setelah mereka terima daftar-pengguna-online
+    // Guru kirim offer ke siswa yang baru masuk
+    if (penggunaSaatIni.role === 'guru') {
+      setTimeout(() => mulaiWebRTC(socketId, true), 500);
+    }
+    // Kalau guru yang baru masuk, siswa yang sudah ada kirim offer ke guru
+    if (penggunaSaatIni.role === 'siswa' && role === 'guru') {
+      setTimeout(() => mulaiWebRTC(socketId, true), 500);
+    }
   });
 
   socket.on('pengguna-keluar', ({ socketId, namaUser }) => {
