@@ -791,12 +791,11 @@ function hubungkanSocket() {
   socket.on('pengguna-bergabung', ({ socketId, namaUser, role }) => {
     tambahPeserta(socketId, namaUser, role);
     tambahPesanChat('sistem', `${namaUser} bergabung ke ruangan`, '');
-    // Guru kirim offer ke siswa yang baru masuk
+    // Hanya GURU yang boleh kirim offer — ke siapapun yang baru masuk
+    // Siswa TIDAK kirim offer (mencegah offer collision / WebRTC glare)
+    // Ketika guru masuk setelah siswa: guru akan mendapat daftar-pengguna-online
+    // dan mengirim offer ke semua siswa dari sana — siswa cukup tunggu & jawab
     if (penggunaSaatIni.role === 'guru') {
-      setTimeout(() => mulaiWebRTC(socketId, true), 500);
-    }
-    // Kalau guru yang baru masuk, siswa yang sudah ada kirim offer ke guru
-    if (penggunaSaatIni.role === 'siswa' && role === 'guru') {
       setTimeout(() => mulaiWebRTC(socketId, true), 500);
     }
   });
@@ -974,6 +973,7 @@ async function buatPC(socketId) {
       delete sedangNegosiasiDg[socketId]; // negosiasi selesai
     }
     if (pc.connectionState === 'failed') {
+      delete sedangNegosiasiDg[socketId]; // bersihkan agar bisa negosiasi ulang
       if (pc.restartIce) { pc.restartIce(); return; }
       hapusVideoRemote(socketId);
       if (koneksiPeer[socketId] === pc) delete koneksiPeer[socketId];
@@ -982,6 +982,7 @@ async function buatPC(socketId) {
       setTimeout(() => {
         if (koneksiPeer[socketId] === pc &&
            (pc.connectionState === 'disconnected' || pc.connectionState === 'failed')) {
+          delete sedangNegosiasiDg[socketId]; // bersihkan agar bisa reconnect
           hapusVideoRemote(socketId);
           delete koneksiPeer[socketId];
         }
