@@ -74,6 +74,7 @@ app.get('/api/webrtc-config', (req, res) => {
 // ROUTE: HALAMAN HTML
 // =====================================================
 app.get('/',        (req, res) => res.sendFile(path.join(__dirname, '../public/pages/login.html')));
+app.get('/test',    (req, res) => res.sendFile(path.join(__dirname, '../public/pages/test-webrtc.html')));
 app.get('/guru',    (req, res) => res.sendFile(path.join(__dirname, '../public/pages/guru-dashboard.html')));
 app.get('/siswa',   (req, res) => res.sendFile(path.join(__dirname, '../public/pages/siswa-dashboard.html')));
 app.get('/ruang/:id', (req, res) => res.sendFile(path.join(__dirname, '../public/pages/ruang-kelas.html')));
