@@ -743,29 +743,44 @@ function hubungkanSocket() {
   });
 
   // ---- CONNECT: selalu emit bergabung-ruang di sini ----
-  // Ini menangani BOTH koneksi pertama DAN reconnect
-  let sudahBergabung = false;
+  // Guard dobel: simpan socket.id terakhir + debounce 100ms
+  // socket.io bisa fire 'connect' >1x saat transport upgrade polling→ws
+  let socketIdTerakhirBergabung = null;
+  let bergabungTimer = null;
+
   socket.on('connect', () => {
-    console.log('[Socket connect] id:', socket.id, 'sudahBergabung:', sudahBergabung);
-    
-    // Kalau ini reconnect (sudah bergabung sebelumnya), bersihkan peer lama
-    if (sudahBergabung) {
+    const sidBaru = socket.id;
+    console.log('[Socket connect] id:', sidBaru);
+
+    // Abaikan jika socket ID sama (dobel connect)
+    if (sidBaru === socketIdTerakhirBergabung) {
+      console.warn('[connect dedup] diabaikan untuk socket', sidBaru);
+      return;
+    }
+
+    // Reconnect dengan socket ID baru — bersihkan peer lama
+    if (socketIdTerakhirBergabung !== null) {
       Object.keys(koneksiPeer).forEach(sid => {
         try { koneksiPeer[sid].close(); } catch(e) {}
         hapusVideoRemote(sid);
         delete koneksiPeer[sid];
       });
     }
-    sudahBergabung = true;
-    
-    const namaUser = penggunaSaatIni.namaGuru || penggunaSaatIni.nama;
-    socket.emit('bergabung-ruang', {
-      ruangId: ruangSaatIni.id,
-      userId: penggunaSaatIni.id,
-      namaUser,
-      role: penggunaSaatIni.role
-    });
-    console.log('[bergabung-ruang dikirim]', ruangSaatIni.id);
+
+    socketIdTerakhirBergabung = sidBaru;
+
+    // Debounce: kalau ada event connect doublet cepat, hanya emit sekali
+    clearTimeout(bergabungTimer);
+    bergabungTimer = setTimeout(() => {
+      const namaUser = penggunaSaatIni.namaGuru || penggunaSaatIni.nama;
+      socket.emit('bergabung-ruang', {
+        ruangId: ruangSaatIni.id,
+        userId: penggunaSaatIni.id,
+        namaUser,
+        role: penggunaSaatIni.role
+      });
+      console.log('[bergabung-ruang dikirim]', ruangSaatIni.id, 'socket:', sidBaru);
+    }, 100);
   });
 
   // ATURAN OFFER:
