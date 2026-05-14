@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>WebRTC Test</title>
+<style>
+body { font-family: monospace; background: #0f172a; color: #e2e8f0; padding: 20px; }
+.ok { color: #4ade80; } .err { color: #f87171; } .info { color: #60a5fa; }
+video { width: 300px; height: 200px; background: #1e293b; border: 2px solid #334155; border-radius: 8px; }
+button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin: 5px; font-size: 14px; }
+#log { background: #1e293b; padding: 16px; border-radius: 8px; margin-top: 20px; max-height: 400px; overflow-y: auto; font-size: 13px; line-height: 1.8; }
+</style>
+</head>
+<body>
+<h2>🔧 ZooMimanu — WebRTC Diagnostics</h2>
+<div>
+  <video id="v-local" autoplay muted playsinline></video>
+  <video id="v-remote" autoplay playsinline></video>
+</div>
+<br>
+<button onclick="testKamera()">1. Test Kamera</button>
+<button onclick="testTURN()">2. Test TURN Server</button>
+<button onclick="testSocket()">3. Test Socket</button>
+<button onclick="clearLog()">Clear</button>
+
+<div id="log"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+let stream = null;
+
+function log(msg, type='info') {
+  const d = document.getElementById('log');
+  const t = new Date().toLocaleTimeString('id-ID');
+  d.innerHTML += `<div class="${type}">[${t}] ${msg}</div>`;
+  d.scrollTop = d.scrollHeight;
+}
+
+function clearLog() { document.getElementById('log').innerHTML = ''; }
+
+async function testKamera() {
+  log('Mencoba akses kamera...', 'info');
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    document.getElementById('v-local').srcObject = stream;
+    log('✅ Kamera berhasil — tracks: ' + stream.getTracks().map(t=>t.kind+'/'+t.readyState).join(', '), 'ok');
+  } catch(e) {
+    log('❌ Kamera gagal: ' + e.message, 'err');
+  }
+}
+
+async function testTURN() {
+  log('Mengambil ICE config dari server...', 'info');
+  try {
+    const resp = await fetch('/api/webrtc-config');
+    const cfg = await resp.json();
+    const turnServers = cfg.iceServers.filter(s => s.urls && JSON.stringify(s.urls).includes('turn'));
+    log('ICE servers total: ' + cfg.iceServers.length, 'info');
+    log('TURN servers: ' + turnServers.length, turnServers.length > 0 ? 'ok' : 'err');
+    
+    if (!stream) { log('⚠️ Jalankan test kamera dulu!', 'err'); return; }
+    
+    log('Membuat RTCPeerConnection...', 'info');
+    const pc = new RTCPeerConnection(cfg);
+    stream.getTracks().forEach(t => pc.addTrack(t, stream));
+    
+    const candidates = [];
+    pc.onicecandidate = e => {
+      if (e.candidate) {
+        candidates.push(e.candidate);
+        log('ICE candidate: ' + e.candidate.type + ' / ' + e.candidate.protocol, 
+            e.candidate.type === 'relay' ? 'ok' : 'info');
+      } else {
+        // Gathering selesai
+        const hasRelay = candidates.some(c => c.type === 'relay');
+        const hasSrflx = candidates.some(c => c.type === 'srflx');
+        log('--- ICE Gathering Selesai ---', 'info');
+        log('Total candidates: ' + candidates.length, 'info');
+        log('STUN (srflx): ' + hasSrflx, hasSrflx ? 'ok' : 'err');
+        log('TURN (relay): ' + hasRelay, hasRelay ? 'ok' : 'err');
+        if (!hasRelay) log('⚠️ TIDAK ADA RELAY — video tidak akan terhubung antar jaringan berbeda!', 'err');
+        else log('✅ TURN aktif — video bisa terhubung antar jaringan!', 'ok');
+        pc.close();
+      }
+    };
+    
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    log('Gathering ICE candidates (tunggu 10 detik)...', 'info');
+  } catch(e) {
+    log('❌ Error: ' + e.message, 'err');
+  }
+}
+
+function testSocket() {
+  log('Menghubungkan Socket.IO...', 'info');
+  const s = io();
+  s.on('connect', () => {
+    log('✅ Socket terhubung! ID: ' + s.id, 'ok');
+    s.disconnect();
+  });
+  s.on('connect_error', e => log('❌ Socket gagal: ' + e.message, 'err'));
+}
+</script>
+</body>
+</html>
