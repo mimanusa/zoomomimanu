@@ -805,27 +805,26 @@ function hubungkanSocket() {
   });
 
   socket.on('webrtc-answer', async ({ dariSocketId, answer }) => {
-    console.log('[Answer diterima dari]', dariSocketId);
+    console.log('[Answer ←]', dariSocketId);
     const pc = koneksiPeer[dariSocketId];
-    if (pc && pc.signalingState === 'have-local-offer') {
-      try {
-        await pc.setRemoteDescription(new RTCSessionDescription(answer));
-        // Flush ICE buffer setelah setRemoteDescription
-        await drainIceBuffer(dariSocketId, pc);
-      } catch(e) { console.error('[setRemoteDescription answer gagal]', e); }
+    if (!pc) return;
+    if (pc.signalingState !== 'have-local-offer') {
+      console.warn('[Answer diabaikan] signalingState:', pc.signalingState);
+      return;
     }
+    try {
+      await pc.setRemoteDescription(new RTCSessionDescription(answer));
+      await flushIce(dariSocketId, pc);
+    } catch(e) { console.error('[answer gagal]', e); }
   });
 
-  // ICE candidate: buffer dulu jika belum ada remote description
   socket.on('webrtc-ice-candidate', async ({ dariSocketId, candidate }) => {
     if (!candidate) return;
     const pc = koneksiPeer[dariSocketId];
     if (!pc) return;
     if (pc.remoteDescription && pc.remoteDescription.type) {
-      // Remote description sudah ada, langsung tambahkan
-      try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch(e) {}
+      try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch(_) {}
     } else {
-      // Buffer dulu — drainIceBuffer akan dipanggil setelah setRemoteDescription
       if (!iceBuffer[dariSocketId]) iceBuffer[dariSocketId] = [];
       iceBuffer[dariSocketId].push(candidate);
     }
@@ -923,121 +922,128 @@ async function ambilWebRTCConfig() {
 }
 
 // Buffer ICE candidates yang datang sebelum setRemoteDescription
-const iceBuffer = {};
+const iceBuffer = {};      // buffer ICE sebelum remoteDescription siap
+const sedangNegosiasiDg = {}; // cegah double offer ke socket yang sama
 
-function buatPeerConnection(socketId) {
-  return ambilWebRTCConfig().then(config => {
-    const pc = new RTCPeerConnection(config);
-    koneksiPeer[socketId] = pc;
-    iceBuffer[socketId] = [];
+async function buatPC(socketId) {
+  const config = await ambilWebRTCConfig();
+  const pc = new RTCPeerConnection(config);
+  koneksiPeer[socketId] = pc;
+  iceBuffer[socketId] = [];
 
-    // Tambah stream lokal
-    if (streamLokal) {
-      streamLokal.getTracks().forEach(track => pc.addTrack(track, streamLokal));
+  // Tambah semua track lokal
+  if (streamLokal) {
+    streamLokal.getTracks().forEach(t => pc.addTrack(t, streamLokal));
+  }
+
+  // Kumpulkan semua track remote dalam satu stream
+  const remoteStream = new MediaStream();
+  pc.ontrack = (e) => {
+    console.log('[ontrack]', socketId, e.track.kind, e.track.readyState);
+    if (!remoteStream.getTrackById(e.track.id)) {
+      remoteStream.addTrack(e.track);
     }
+    tampilVideoRemote(socketId, remoteStream);
+    e.track.onunmute = () => tampilVideoRemote(socketId, remoteStream);
+    e.track.onended  = () => console.log('[track ended]', socketId, e.track.kind);
+  };
 
-    // Terima video remote
-    // ontrack dipanggil 2x: sekali untuk audio, sekali untuk video
-    // Kita tunggu video track sebelum tampilkan
-    const remoteStream = new MediaStream();
-    pc.ontrack = (event) => {
-      console.log('[ontrack]', socketId, 'kind:', event.track.kind, 'state:', event.track.readyState);
-      remoteStream.addTrack(event.track);
-      
-      // Tampilkan/update video setiap kali ada track baru
-      tampilVideoRemote(socketId, remoteStream);
-      
-      // Juga update saat track aktif (kadang datang dalam state muted)
-      event.track.onunmute = () => {
-        console.log('[track unmuted]', socketId, event.track.kind);
-        tampilVideoRemote(socketId, remoteStream);
-      };
-    };
+  pc.onicecandidate = (e) => {
+    if (e.candidate) {
+      socket.emit('webrtc-ice-candidate', { tujuanSocketId: socketId, candidate: e.candidate });
+    }
+  };
 
-    // Kirim ICE candidate
-    pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        socket.emit('webrtc-ice-candidate', { tujuanSocketId: socketId, candidate: event.candidate });
-      }
-    };
+  pc.oniceconnectionstatechange = () => {
+    console.log('[ICE]', socketId, pc.iceConnectionState);
+    if (pc.iceConnectionState === 'failed' && pc.restartIce) pc.restartIce();
+  };
 
-    pc.oniceconnectionstatechange = () => {
-      console.log('[ICE]', socketId, pc.iceConnectionState);
-      if (pc.iceConnectionState === 'failed' && pc.restartIce) pc.restartIce();
-    };
-
-    pc.onconnectionstatechange = () => {
-      console.log('[PC]', socketId, pc.connectionState);
-      if (pc.connectionState === 'failed') {
-        // Coba ICE restart dulu sebelum buat koneksi baru
-        if (pc.restartIce) {
-          console.log('[PC] ICE restart...');
-          pc.restartIce();
-        } else {
+  pc.onconnectionstatechange = () => {
+    console.log('[PC]', socketId, pc.connectionState);
+    if (pc.connectionState === 'connected') {
+      delete sedangNegosiasiDg[socketId]; // negosiasi selesai
+    }
+    if (pc.connectionState === 'failed') {
+      if (pc.restartIce) { pc.restartIce(); return; }
+      hapusVideoRemote(socketId);
+      if (koneksiPeer[socketId] === pc) delete koneksiPeer[socketId];
+    }
+    if (pc.connectionState === 'disconnected') {
+      setTimeout(() => {
+        if (koneksiPeer[socketId] === pc &&
+           (pc.connectionState === 'disconnected' || pc.connectionState === 'failed')) {
           hapusVideoRemote(socketId);
-          if (koneksiPeer[socketId] === pc) delete koneksiPeer[socketId];
+          delete koneksiPeer[socketId];
         }
-      } else if (pc.connectionState === 'disconnected') {
-        // Tunggu 5 detik, kalau masih disconnected baru bersihkan
-        setTimeout(() => {
-          if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
-            hapusVideoRemote(socketId);
-            if (koneksiPeer[socketId] === pc) delete koneksiPeer[socketId];
-          }
-        }, 5000);
-      }
-    };
+      }, 6000);
+    }
+  };
 
-    return pc;
-  });
+  return pc;
 }
 
-async function drainIceBuffer(socketId, pc) {
-  const candidates = iceBuffer[socketId] || [];
+async function flushIce(socketId, pc) {
+  const buf = iceBuffer[socketId] || [];
   iceBuffer[socketId] = [];
-  for (const c of candidates) {
-    try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch(e) {}
+  for (const c of buf) {
+    try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch(_) {}
   }
 }
 
 async function mulaiWebRTC(targetSocketId, kirimOffer) {
-  if (koneksiPeer[targetSocketId]) {
-    try { koneksiPeer[targetSocketId].close(); } catch(e) {}
+  // Jangan mulai negosiasi baru kalau sedang negosiasi / sudah connected
+  const existing = koneksiPeer[targetSocketId];
+  if (existing) {
+    if (existing.connectionState === 'connected') return;
+    if (sedangNegosiasiDg[targetSocketId]) return;
+    try { existing.close(); } catch(_) {}
     hapusVideoRemote(targetSocketId);
     delete koneksiPeer[targetSocketId];
   }
 
-  const pc = await buatPeerConnection(targetSocketId);
+  sedangNegosiasiDg[targetSocketId] = true;
+  const pc = await buatPC(targetSocketId);
 
   if (kirimOffer) {
     try {
-      const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
+      const offer = await pc.createOffer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: true
+      });
       await pc.setLocalDescription(offer);
       socket.emit('webrtc-offer', { tujuanSocketId: targetSocketId, offer });
-      console.log('[Offer dikirim ke]', targetSocketId);
-    } catch(e) { console.error('[Gagal buat offer]', e); }
+      console.log('[Offer →]', targetSocketId);
+    } catch(e) {
+      console.error('[offer gagal]', e);
+      delete sedangNegosiasiDg[targetSocketId];
+    }
   }
 }
 
 async function terimaOffer(dariSocketId, offer) {
-  if (koneksiPeer[dariSocketId]) {
-    try { koneksiPeer[dariSocketId].close(); } catch(e) {}
+  const existing = koneksiPeer[dariSocketId];
+  if (existing) {
+    try { existing.close(); } catch(_) {}
     hapusVideoRemote(dariSocketId);
     delete koneksiPeer[dariSocketId];
   }
 
-  const pc = await buatPeerConnection(dariSocketId);
+  sedangNegosiasiDg[dariSocketId] = true;
+  const pc = await buatPC(dariSocketId);
 
   try {
     await pc.setRemoteDescription(new RTCSessionDescription(offer));
-    await drainIceBuffer(dariSocketId, pc);
+    await flushIce(dariSocketId, pc);
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
     socket.emit('webrtc-answer', { tujuanSocketId: dariSocketId, answer });
-    console.log('[Answer dikirim ke]', dariSocketId);
-  } catch(e) { console.error('[Gagal terimaOffer]', e); }
+    console.log('[Answer →]', dariSocketId);
+  } catch(e) {
+    console.error('[terimaOffer gagal]', e);
+    delete sedangNegosiasiDg[dariSocketId];
+  }
 }
-
 
 function tampilVideoRemote(socketId, stream) {
   // Kalau sudah ada, update srcObject dan coba play ulang
