@@ -837,24 +837,30 @@ function hubungkanSocket() {
   });
 
   // Presentasi (diterima siswa & guru lain)
+  // Simpan slide terakhir untuk digambar ulang saat tab dibuka
+  let slideAktif = null;
+
   socket.on('presentasi-halaman', ({ imageData, halaman, totalHalaman, namaFile }) => {
-    // Tampilkan canvas DULU sebelum gambar supaya dimensi sudah benar
-    tampilkanCanvasPresentasi(true);
+    slideAktif = { imageData, halaman, totalHalaman, namaFile };
+
     document.getElementById('badge-presentasi').style.display = 'inline';
-
-    // Buka tab presentasi
-    const tabPapan = document.querySelector('.tab-nav button:nth-child(2)');
-    if (tabPapan) gantiPanel('papan', tabPapan);
-
-    // Update info siswa
     if (document.getElementById('teks-info-siswa')) {
       document.getElementById('teks-info-siswa').textContent =
         `📄 ${namaFile || 'Presentasi'} — Halaman ${halaman}/${totalHalaman}`;
     }
     tampilNotif(`📄 ${namaFile || 'Presentasi'} — ${halaman}/${totalHalaman}`);
 
-    // Gambar ke canvas setelah layout stabil
-    setTimeout(() => gambarKeCanvas(imageData), 150);
+    // Buka tab presentasi dan gambar
+    const tabPapan = document.querySelector('.tab-nav button:nth-child(2)');
+    if (tabPapan) gantiPanel('papan', tabPapan);
+
+    tampilkanCanvasPresentasi(true);
+    // Gambar setelah canvas visible dan layout stabil
+    setTimeout(() => {
+      gambarKeCanvas(imageData);
+      // Gambar ulang sekali lagi untuk pastikan tidak tertimpa resize
+      setTimeout(() => gambarKeCanvas(imageData), 300);
+    }, 200);
   });
 
   socket.on('presentasi-selesai', () => {
@@ -963,9 +969,22 @@ function buatPeerConnection(socketId) {
     pc.onconnectionstatechange = () => {
       console.log('[PC]', socketId, pc.connectionState);
       if (pc.connectionState === 'failed') {
-        hapusVideoRemote(socketId);
-        if (koneksiPeer[socketId] === pc) delete koneksiPeer[socketId];
-        setTimeout(() => { if (!koneksiPeer[socketId]) mulaiWebRTC(socketId, true); }, 2000);
+        // Coba ICE restart dulu sebelum buat koneksi baru
+        if (pc.restartIce) {
+          console.log('[PC] ICE restart...');
+          pc.restartIce();
+        } else {
+          hapusVideoRemote(socketId);
+          if (koneksiPeer[socketId] === pc) delete koneksiPeer[socketId];
+        }
+      } else if (pc.connectionState === 'disconnected') {
+        // Tunggu 5 detik, kalau masih disconnected baru bersihkan
+        setTimeout(() => {
+          if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+            hapusVideoRemote(socketId);
+            if (koneksiPeer[socketId] === pc) delete koneksiPeer[socketId];
+          }
+        }, 5000);
       }
     };
 
@@ -1951,6 +1970,10 @@ function gantiPanel(nama, el) {
   document.getElementById(`panel-${nama}`).classList.add('tampil');
   document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('aktif'));
   el.classList.add('aktif');
+  // Gambar ulang slide presentasi saat tab presentasi dibuka
+  if (nama === 'papan' && typeof slideAktif !== 'undefined' && slideAktif) {
+    setTimeout(() => gambarKeCanvas(slideAktif.imageData), 100);
+  }
   if (nama === 'tugas') document.getElementById('badge-tugas').style.display = 'none';
 }
 
