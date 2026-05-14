@@ -258,19 +258,32 @@ io.on('connection', (socket) => {
 
   // ---- BERGABUNG RUANG ----
   socket.on('bergabung-ruang', ({ ruangId, userId, namaUser, role }) => {
+    // ── DEDUP GUARD ──────────────────────────────────────────────────────────
+    // Cegah pemrosesan ganda untuk socket yang sama di ruang yang sama.
+    // Jika client mengirim bergabung-ruang >1x (mis. transport upgrade
+    // polling→ws, atau client bug), server akan broadcast pengguna-bergabung
+    // berkali-kali → semua client bereaksi → ping-pong cascade.
+    const sudahAda = penggunaSedangOnline[socket.id];
+    if (sudahAda && sudahAda.ruangId === ruangId) {
+      console.log(`⚠️  [dedup] ${namaUser} sudah di ruang ${ruangId}, diabaikan`);
+      return;
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     socket.join(ruangId);
     penggunaSedangOnline[socket.id] = { ruangId, userId, namaUser, role };
 
     // Beritahu peserta lain ada yang masuk
     socket.to(ruangId).emit('pengguna-bergabung', { socketId: socket.id, userId, namaUser, role });
 
-    // Kirim daftar online ke pendatang baru
+    // Kirim daftar online ke pendatang baru — TANPA diri sendiri
+    // (mencegah client memproses dirinya sendiri dari daftar)
     const penggunaRuang = Object.entries(penggunaSedangOnline)
-      .filter(([, v]) => v.ruangId === ruangId)
+      .filter(([sid, v]) => v.ruangId === ruangId && sid !== socket.id)
       .map(([socketId, v]) => ({ socketId, ...v }));
     socket.emit('daftar-pengguna-online', penggunaRuang);
 
-    // FIX: Kalau guru sudah share presentasi, langsung kirim ke pendatang baru
+    // Kalau guru sudah share presentasi, langsung kirim ke pendatang baru
     if (presentasiAktif[ruangId]) {
       socket.emit('presentasi-halaman', presentasiAktif[ruangId]);
     }
